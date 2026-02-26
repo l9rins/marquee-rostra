@@ -1,20 +1,34 @@
 // ============================================================================
-// RosterDashboard.tsx — Main UI for the NBA 2K14 .ROS Roster Editor
+// RosterDashboard.tsx — NBA 2K14 .ROS Roster Editor (shadcn/ui v4.0)
 // ============================================================================
 // Architecture:
 //   1. Engine abstraction: Wasm-first with JS fallback (src/engine/)
 //   2. Zero-copy file upload (drag-and-drop + file picker)
-//   3. Editable data grid with inline cell editing
+//   3. shadcn/ui data grid with inline cell editing
 //   4. Column sorting, keyboard nav, undo support
 //   5. Export with CRC32 checksum recalculation
 // ============================================================================
 
 import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
-import type { IRosterEngine, PlayerData, EditableField, RatingField, EngineType } from '../engine/RosterEngine';
+import type { IRosterEngine, PlayerData, EditableField, RatingField } from '../engine/RosterEngine';
 import { createEngine } from '../engine/createEngine';
+import { RadarChart } from './RadarChart';
+import { toast } from 'sonner';
+
+// shadcn/ui components
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import { Slider } from '@/components/ui/slider';
+import {
+    Table, TableHeader, TableBody, TableRow, TableHead, TableCell,
+} from '@/components/ui/table';
+import {
+    Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription,
+} from '@/components/ui/sheet';
 
 // ============================================================================
-// Constants
+// Constants & Types
 // ============================================================================
 
 const ROWS_PER_PAGE = 25;
@@ -28,11 +42,6 @@ type EditingCell = {
     field: EditableField;
 };
 
-type ToastState = {
-    message: string;
-    type: 'success' | 'error' | 'info';
-} | null;
-
 interface EditHistoryEntry {
     playerIndex: number;
     field: EditableField;
@@ -41,38 +50,68 @@ interface EditHistoryEntry {
 }
 
 // ============================================================================
-// Component
+// Helpers
+// ============================================================================
+
+const AttributeGauge: React.FC<{ label: string; value: number }> = ({ label, value }) => {
+    const getRatingClass = (val: number) => {
+        if (val >= 90) return 'elite';
+        if (val >= 80) return 'high';
+        if (val >= 70) return 'med';
+        return 'low';
+    };
+
+    const ratingClass = getRatingClass(value);
+    const percentage = Math.max(0, Math.min(100, ((value - 25) / (99 - 25)) * 100));
+
+    return (
+        <div className="gauge-outer" title={`${label}: ${value}`}>
+            <div className="gauge-container">
+                <div
+                    className={`gauge-bar gauge-${ratingClass}`}
+                    style={{ width: `${percentage}%` }}
+                />
+            </div>
+            <div className={`gauge-value-mini rating-text-${ratingClass}`}>{value}</div>
+        </div>
+    );
+};
+
+// ============================================================================
+// Main Component
 // ============================================================================
 
 export default function RosterDashboard() {
-    // ---- State ----------------------------------------------------------------
-    const [engine, setEngine] = useState<IRosterEngine | null>(null);
-    const [engineType, setEngineType] = useState<EngineType>('js');
+    // ---- Core State -----------------------------------------------------------
     const [players, setPlayers] = useState<PlayerData[]>([]);
+    const [engine, setEngine] = useState<IRosterEngine | null>(null);
+    const [engineType, setEngineType] = useState<'wasm' | 'js' | null>(null);
+    const [loading, setLoading] = useState(false);
+    const [isDragging, setIsDragging] = useState(false);
+
+    // ---- Performance & File Stats ---------------------------------------------
     const [fileName, setFileName] = useState('');
     const [fileSize, setFileSize] = useState(0);
-    const [parseTimeMs, setParseTimeMs] = useState(0);
-    const [isDragging, setIsDragging] = useState(false);
-    const [isLoading, setIsLoading] = useState(false);
+    const [parseTime, setParseTime] = useState(0);
+
+    // ---- Grid View State ------------------------------------------------------
     const [searchQuery, setSearchQuery] = useState('');
     const [currentPage, setCurrentPage] = useState(0);
-    const [editingCell, setEditingCell] = useState<EditingCell | null>(null);
-    const [editValue, setEditValue] = useState('');
-    const [toast, setToast] = useState<ToastState>(null);
     const [sortKey, setSortKey] = useState<SortKey>('index');
     const [sortDir, setSortDir] = useState<SortDir>('asc');
+    const [editingCell, setEditingCell] = useState<EditingCell | null>(null);
+    const [editValue, setEditValue] = useState('');
     const [editHistory, setEditHistory] = useState<EditHistoryEntry[]>([]);
+
+    // ---- v4.0 shadcn Features State -------------------------------------------
+    const [selectedPlayerIndex, setSelectedPlayerIndex] = useState<number | null>(null);
+    const [selectedIndices, setSelectedIndices] = useState<Set<number>>(new Set());
+    const [lastClickedIndex, setLastClickedIndex] = useState<number | null>(null);
+    const [ratingFilters, setRatingFilters] = useState({ minOverall: 25, minThreePt: 25 });
+    const [profileOpen, setProfileOpen] = useState(false);
 
     const fileInputRef = useRef<HTMLInputElement>(null);
     const editInputRef = useRef<HTMLInputElement>(null);
-
-    // ---- Toast auto-dismiss ---------------------------------------------------
-    useEffect(() => {
-        if (toast) {
-            const timer = setTimeout(() => setToast(null), 3000);
-            return () => clearTimeout(timer);
-        }
-    }, [toast]);
 
     // ---- Focus edit input when editing ----------------------------------------
     useEffect(() => {
@@ -106,7 +145,7 @@ export default function RosterDashboard() {
                         prev.map((p) => (p.index === last.playerIndex ? updatedPlayer : p))
                     );
                     setEditHistory((prev) => prev.slice(0, -1));
-                    setToast({ message: `Undo: restored ${last.field} for player #${last.playerIndex}`, type: 'info' });
+                    toast.info(`Undo: restored ${last.field} for player #${last.playerIndex}`);
                 }
             }
         };
@@ -116,10 +155,9 @@ export default function RosterDashboard() {
 
     // ---- File processing (async — supports Wasm loading) ----------------------
     const processFile = useCallback(async (buffer: ArrayBuffer, name: string) => {
-        setIsLoading(true);
+        setLoading(true);
         const t0 = performance.now();
         try {
-            // Dispose previous engine if any
             engine?.dispose();
 
             const eng = await createEngine(buffer);
@@ -129,8 +167,10 @@ export default function RosterDashboard() {
             setEngineType(eng.type);
             setFileName(name);
             setFileSize(buffer.byteLength);
-            setParseTimeMs(Math.round(elapsed));
+            setParseTime(Math.round(elapsed));
             setEditHistory([]);
+            setSelectedIndices(new Set());
+            setSelectedPlayerIndex(null);
 
             const count = eng.getPlayerCount();
             const playerList: PlayerData[] = [];
@@ -144,18 +184,12 @@ export default function RosterDashboard() {
             setSortDir('asc');
 
             const engineLabel = eng.type === 'wasm' ? '⚡ Wasm C++' : '🔧 JS';
-            setToast({
-                message: `Loaded ${count} players via ${engineLabel} engine (${Math.round(elapsed)}ms)`,
-                type: 'success',
-            });
+            toast.success(`Loaded ${count} players via ${engineLabel} engine (${Math.round(elapsed)}ms)`);
         } catch (err) {
             console.error('Failed to parse .ROS file:', err);
-            setToast({
-                message: `Error: ${err instanceof Error ? err.message : 'Unknown error'}`,
-                type: 'error',
-            });
+            toast.error(`Error: ${err instanceof Error ? err.message : 'Unknown error'}`);
         } finally {
-            setIsLoading(false);
+            setLoading(false);
         }
     }, [engine]);
 
@@ -177,42 +211,75 @@ export default function RosterDashboard() {
         e.stopPropagation();
         setIsDragging(false);
 
-        const file = e.dataTransfer.files[0];
-        if (file) {
+        const f = e.dataTransfer.files[0];
+        if (f) {
             const reader = new FileReader();
             reader.onload = () => {
                 if (reader.result instanceof ArrayBuffer) {
-                    processFile(reader.result, file.name);
+                    processFile(reader.result, f.name);
                 }
             };
-            reader.readAsArrayBuffer(file);
+            reader.readAsArrayBuffer(f);
         }
     }, [processFile]);
 
     const handleFileSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (file) {
+        const f = e.target.files?.[0];
+        if (f) {
             const reader = new FileReader();
             reader.onload = () => {
                 if (reader.result instanceof ArrayBuffer) {
-                    processFile(reader.result, file.name);
+                    processFile(reader.result, f.name);
                 }
             };
-            reader.readAsArrayBuffer(file);
+            reader.readAsArrayBuffer(f);
         }
+        e.target.value = '';
     }, [processFile]);
 
-    // ---- Search & filter ------------------------------------------------------
+    // ---- Multi-Select Logic ----
+    const handleRowClick = (index: number, e: React.MouseEvent) => {
+        if (e.shiftKey && lastClickedIndex !== null) {
+            const start = Math.min(lastClickedIndex, index);
+            const end = Math.max(lastClickedIndex, index);
+            const newSelection = new Set(selectedIndices);
+            for (let i = start; i <= end; i++) {
+                newSelection.add(i);
+            }
+            setSelectedIndices(newSelection);
+        } else if (e.ctrlKey || e.metaKey) {
+            const newSelection = new Set(selectedIndices);
+            if (newSelection.has(index)) {
+                newSelection.delete(index);
+            } else {
+                newSelection.add(index);
+            }
+            setSelectedIndices(newSelection);
+        } else {
+            setSelectedIndices(new Set([index]));
+            setSelectedPlayerIndex(index);
+            setProfileOpen(true);
+        }
+        setLastClickedIndex(index);
+    };
+
+    // ---- Search & Filter ------------------------------------------------------
     const filteredPlayers = useMemo(() => {
-        if (!searchQuery.trim()) return players;
-        const q = searchQuery.toLowerCase();
-        return players.filter(
-            (p) =>
-                p.firstName.toLowerCase().includes(q) ||
-                p.lastName.toLowerCase().includes(q) ||
-                String(p.cfid).includes(q)
-        );
-    }, [players, searchQuery]);
+        const q = searchQuery.toLowerCase().trim();
+        return players
+            .map((p, i) => ({ ...p, originalIndex: i }))
+            .filter((p) => {
+                const matchesSearch = !q ||
+                    p.firstName.toLowerCase().includes(q) ||
+                    p.lastName.toLowerCase().includes(q) ||
+                    String(p.cfid).includes(q);
+
+                const matchesOverall = p.overallRating >= ratingFilters.minOverall;
+                const matchesThreePt = p.threePointRating >= ratingFilters.minThreePt;
+
+                return matchesSearch && matchesOverall && matchesThreePt;
+            });
+    }, [players, searchQuery, ratingFilters]);
 
     // ---- Sorting --------------------------------------------------------------
     const sortedPlayers = useMemo(() => {
@@ -252,7 +319,7 @@ export default function RosterDashboard() {
 
     useEffect(() => {
         setCurrentPage(0);
-    }, [searchQuery, sortKey, sortDir]);
+    }, [searchQuery, sortKey, sortDir, ratingFilters]);
 
     // ---- Inline editing -------------------------------------------------------
     const startEditing = (playerIndex: number, field: EditableField, currentValue: number) => {
@@ -270,25 +337,24 @@ export default function RosterDashboard() {
 
         const { playerIndex, field } = editingCell;
         const currentPlayer = players.find((p) => p.index === playerIndex);
-        const oldValue = currentPlayer ? currentPlayer[field] as number : 0;
+        const oldValue = currentPlayer ? (currentPlayer[field] as number) : 0;
 
         if (field === 'cfid') {
             if (value < 0 || value > 65535) {
-                setToast({ message: 'CFID must be 0–65535', type: 'error' });
+                toast.error('CFID must be 0–65535');
                 setEditingCell(null);
                 return;
             }
             engine.setCFID(playerIndex, value);
         } else {
             if (value < 25 || value > 110) {
-                setToast({ message: 'Rating must be 25–110', type: 'error' });
+                toast.error('Rating must be 25–110');
                 setEditingCell(null);
                 return;
             }
             engine.setRating(playerIndex, field as RatingField, value);
         }
 
-        // Record for undo
         setEditHistory((prev) => [...prev, { playerIndex, field, oldValue, newValue: value }]);
 
         const updatedPlayer = engine.getPlayer(playerIndex);
@@ -297,7 +363,7 @@ export default function RosterDashboard() {
         );
 
         setEditingCell(null);
-        setToast({ message: `Updated ${field} for player #${playerIndex}`, type: 'success' });
+        toast.success(`Updated ${field} for player #${playerIndex}`);
     };
 
     const cancelEdit = () => setEditingCell(null);
@@ -322,17 +388,10 @@ export default function RosterDashboard() {
             a.click();
             document.body.removeChild(a);
             URL.revokeObjectURL(url);
-            setToast({ message: 'Binary compiled and CRC32 verified ✓', type: 'success' });
+            toast.success('Binary compiled and CRC32 verified ✓');
         } catch (err) {
-            setToast({ message: `Export failed: ${err instanceof Error ? err.message : 'Unknown'}`, type: 'error' });
+            toast.error(`Export failed: ${err instanceof Error ? err.message : 'Unknown'}`);
         }
-    };
-
-    // ---- Rating color class ---------------------------------------------------
-    const ratingClass = (value: number): string => {
-        if (value >= 75) return 'cell-rating cell-rating--high';
-        if (value >= 55) return 'cell-rating cell-rating--mid';
-        return 'cell-rating cell-rating--low';
     };
 
     // ---- Render helper: editable cell -----------------------------------------
@@ -348,9 +407,9 @@ export default function RosterDashboard() {
 
         if (isEditing) {
             return (
-                <input
+                <Input
                     ref={editInputRef}
-                    className="cell-input"
+                    className="w-20 h-7 font-mono text-xs"
                     type="number"
                     value={editValue}
                     onChange={(e) => setEditValue(e.target.value)}
@@ -362,7 +421,7 @@ export default function RosterDashboard() {
 
         return (
             <span
-                className={`cell-editable ${extraClass}`}
+                className={`cursor-text px-2 py-1 rounded-sm font-mono text-sm font-medium transition-colors hover:bg-primary/5 ${extraClass}`}
                 onClick={() => startEditing(player.index, field, value)}
                 title="Click to edit"
             >
@@ -378,28 +437,35 @@ export default function RosterDashboard() {
         return bytes + ' B';
     };
 
+    // ---- Profile player (for Sheet) -------------------------------------------
+    const profilePlayer = selectedPlayerIndex !== null ? players[selectedPlayerIndex] : null;
+
     // ==========================================================================
     // Render
     // ==========================================================================
     return (
-        <div className="app-shell">
+        <div className="flex flex-col min-h-screen p-6 max-w-[1440px] mx-auto">
             {/* ---- Header -------------------------------------------------------- */}
-            <header className="app-header">
-                <div className="app-logo">
-                    <div className="app-logo-icon">R</div>
-                    <div className="app-logo-text">
-                        <span>Rostra</span> Editor
+            <header className="flex items-center justify-between px-6 py-4 bg-card/85 backdrop-blur-xl border border-border rounded-2xl mb-8 animate-fade-in">
+                <div className="flex items-center gap-4">
+                    <div className="w-10 h-10 bg-gradient-to-br from-primary to-primary/70 rounded-xl flex items-center justify-center text-xl font-bold text-primary-foreground shadow-lg shadow-primary/25">
+                        R
+                    </div>
+                    <div className="text-xl font-bold tracking-tight">
+                        <span className="text-primary">Rostra</span> Editor
                     </div>
                 </div>
-                <div className="app-header-badges">
-                    <span className="badge badge--accent">NBA 2K14</span>
+                <div className="flex gap-2">
+                    <Badge variant="outline" className="border-primary/20 text-primary bg-primary/10">NBA 2K14</Badge>
                     {engine && (
-                        <span className={`badge ${engineType === 'wasm' ? 'badge--wasm' : 'badge--info'}`}>
+                        <Badge variant={engineType === 'wasm' ? 'default' : 'secondary'}>
                             {engineType === 'wasm' ? '⚡ Wasm Engine' : '🔧 JS Engine'}
-                        </span>
+                        </Badge>
                     )}
                     {engine && (
-                        <span className="badge badge--success">● Connected</span>
+                        <Badge variant="outline" className="border-green-500/20 text-green-500 bg-green-500/10">
+                            ● Connected
+                        </Badge>
                     )}
                 </div>
             </header>
@@ -407,7 +473,10 @@ export default function RosterDashboard() {
             {/* ---- Upload Zone --------------------------------------------------- */}
             {!engine && (
                 <div
-                    className={`drop-zone ${isDragging ? 'drop-zone--active' : ''}`}
+                    className={`relative border-2 border-dashed rounded-2xl py-20 px-8 flex flex-col items-center justify-center text-center cursor-pointer transition-all duration-300 ${isDragging
+                            ? 'border-primary bg-primary/5 shadow-[0_0_40px_rgba(255,152,0,0.08)]'
+                            : 'border-border hover:border-primary/50 bg-gradient-to-br from-primary/5 to-transparent'
+                        }`}
                     onDragOver={handleDragOver}
                     onDragLeave={handleDragLeave}
                     onDrop={handleDrop}
@@ -417,20 +486,20 @@ export default function RosterDashboard() {
                         ref={fileInputRef}
                         type="file"
                         accept=".ROS,.ros"
-                        style={{ display: 'none' }}
+                        className="hidden"
                         onChange={handleFileSelect}
                     />
-                    {isLoading ? (
+                    {loading ? (
                         <>
-                            <div className="spinner" style={{ width: 48, height: 48, borderWidth: 3 }} />
-                            <p className="drop-zone-title" style={{ marginTop: 16 }}>Parsing roster file…</p>
+                            <div className="w-12 h-12 border-2 border-border border-t-primary rounded-full animate-spin" />
+                            <p className="text-lg font-semibold mt-4">Parsing roster file…</p>
                         </>
                     ) : (
                         <>
-                            <div className="drop-zone-icon">🏀</div>
-                            <p className="drop-zone-title">Drop your .ROS file here</p>
-                            <p className="drop-zone-subtitle">
-                                or <em>click to browse</em> — supports NBA 2K14 roster files
+                            <div className="text-5xl mb-4 drop-shadow-[0_4px_12px_rgba(255,152,0,0.2)]">🏀</div>
+                            <p className="text-lg font-semibold">Drop your .ROS file here</p>
+                            <p className="text-muted-foreground text-sm">
+                                or <span className="text-primary font-medium">click to browse</span> — supports NBA 2K14 roster files
                             </p>
                         </>
                     )}
@@ -439,204 +508,228 @@ export default function RosterDashboard() {
 
             {/* ---- Stats Bar ----------------------------------------------------- */}
             {engine && (
-                <div className="stats-bar">
-                    <div className="stat-item">
-                        <div className="stat-value">{players.length}</div>
-                        <div className="stat-label">Players</div>
-                    </div>
-                    <div className="stat-item">
-                        <div className="stat-value">{formatSize(fileSize)}</div>
-                        <div className="stat-label">File Size</div>
-                    </div>
-                    <div className="stat-item">
-                        <div className="stat-value">{parseTimeMs}ms</div>
-                        <div className="stat-label">Parse Time</div>
-                    </div>
-                    <div className="stat-item">
-                        <div className="stat-value">{fileName.split('.')[0] || 'Roster'}</div>
-                        <div className="stat-label">File Name</div>
-                    </div>
-                    <div className="stat-item">
-                        <div className="stat-value">CRC32</div>
-                        <div className="stat-label">Checksum</div>
-                    </div>
+                <div className="grid grid-cols-[repeat(auto-fit,minmax(150px,1fr))] gap-4 mb-8 animate-slide-up">
+                    {[
+                        { value: players.length, label: 'Players' },
+                        { value: formatSize(fileSize), label: 'File Size' },
+                        { value: `${parseTime}ms`, label: 'Parse Time' },
+                        { value: fileName.split('.')[0] || 'Roster', label: 'File Name' },
+                        { value: 'CRC32', label: 'Checksum' },
+                    ].map((stat) => (
+                        <div key={stat.label} className="bg-card border border-border rounded-xl p-4 text-center transition-all hover:border-border hover:-translate-y-0.5 hover:shadow-md group">
+                            <div className="text-2xl font-extrabold font-mono bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent leading-tight">
+                                {stat.value}
+                            </div>
+                            <div className="text-xs font-medium text-muted-foreground uppercase tracking-wider mt-1">
+                                {stat.label}
+                            </div>
+                        </div>
+                    ))}
                 </div>
             )}
 
             {/* ---- Toolbar ------------------------------------------------------- */}
             {engine && (
-                <div className="toolbar">
-                    <div className="search-wrapper">
-                        <input
-                            className="search-input"
-                            type="text"
-                            placeholder="Search by name or CFID…"
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                        />
+                <div className="flex flex-col gap-4 mb-6 p-6 bg-card border border-border rounded-2xl animate-fade-in">
+                    <div className="flex items-center gap-3 flex-wrap">
+                        <div className="relative flex-1 min-w-[220px]">
+                            <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-sm opacity-60 pointer-events-none">🔍</span>
+                            <Input
+                                className="pl-10"
+                                placeholder="Search players by name or CFID..."
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                            />
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <Button onClick={handleExport}>
+                                💾 Export .ROS
+                            </Button>
+                            {editHistory.length > 0 && (
+                                <Button
+                                    variant="secondary"
+                                    onClick={() => window.dispatchEvent(new KeyboardEvent('keydown', { key: 'z', ctrlKey: true }))}
+                                >
+                                    ↩ Undo ({editHistory.length})
+                                </Button>
+                            )}
+                            <Button variant="outline" onClick={() => fileInputRef.current?.click()}>
+                                📂 Change File
+                            </Button>
+                        </div>
                     </div>
 
-                    <button className="btn btn--primary" onClick={handleExport}>
-                        💾 Export .ROS
-                    </button>
+                    <div className="flex gap-8 pt-3 border-t border-border">
+                        <div className="flex items-center gap-3 flex-1 max-w-[300px]">
+                            <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider whitespace-nowrap min-w-[72px]">
+                                Min Overall
+                            </label>
+                            <Slider
+                                min={25} max={99}
+                                value={[ratingFilters.minOverall]}
+                                onValueChange={(val) => setRatingFilters(prev => ({ ...prev, minOverall: val[0] }))}
+                            />
+                            <span className="font-mono text-sm font-bold text-primary min-w-[28px] text-right">
+                                {ratingFilters.minOverall}
+                            </span>
+                        </div>
+                        <div className="flex items-center gap-3 flex-1 max-w-[300px]">
+                            <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider whitespace-nowrap min-w-[72px]">
+                                Min 3PT
+                            </label>
+                            <Slider
+                                min={25} max={99}
+                                value={[ratingFilters.minThreePt]}
+                                onValueChange={(val) => setRatingFilters(prev => ({ ...prev, minThreePt: val[0] }))}
+                            />
+                            <span className="font-mono text-sm font-bold text-primary min-w-[28px] text-right">
+                                {ratingFilters.minThreePt}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            )}
 
-                    {editHistory.length > 0 && (
-                        <button
-                            className="btn btn--secondary"
+            {/* ---- Batch Actions Bar ---- */}
+            {selectedIndices.size > 1 && (
+                <div className="fixed bottom-8 left-1/2 -translate-x-1/2 flex items-center gap-6 px-8 py-4 bg-card/92 backdrop-blur-xl border border-border rounded-3xl shadow-2xl z-50 animate-slide-up">
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground whitespace-nowrap">
+                        <span className="inline-flex items-center justify-center min-w-[28px] h-7 px-2 bg-gradient-to-r from-primary to-primary/70 text-primary-foreground font-extrabold text-xs rounded-full shadow-md">
+                            {selectedIndices.size}
+                        </span>
+                        <span>players selected</span>
+                    </div>
+                    <div className="flex gap-2">
+                        <Button
+                            size="sm"
                             onClick={() => {
-                                // Trigger undo via keyboard event simulation
-                                window.dispatchEvent(new KeyboardEvent('keydown', { key: 'z', ctrlKey: true }));
+                                const cfid = prompt('Enter CFID for selected players:');
+                                if (cfid !== null && engine) {
+                                    const val = parseInt(cfid, 10);
+                                    if (isNaN(val) || val < 0 || val > 65535) {
+                                        toast.error('CFID must be 0–65535');
+                                        return;
+                                    }
+                                    selectedIndices.forEach(idx => {
+                                        engine.setCFID(idx, val);
+                                    });
+                                    toast.success(`Updated CFID to ${val} for ${selectedIndices.size} players`);
+                                    const count = engine.getPlayerCount();
+                                    const newList: PlayerData[] = [];
+                                    for (let i = 0; i < count; i++) newList.push(engine.getPlayer(i));
+                                    setPlayers(newList);
+                                }
                             }}
-                            title={`${editHistory.length} edit(s) — Ctrl+Z to undo`}
                         >
-                            ↩ Undo ({editHistory.length})
-                        </button>
-                    )}
-
-                    <button
-                        className="btn btn--secondary"
-                        onClick={() => fileInputRef.current?.click()}
-                    >
-                        📂 Open Another
-                    </button>
-
-                    <input
-                        ref={fileInputRef}
-                        type="file"
-                        accept=".ROS,.ros"
-                        style={{ display: 'none' }}
-                        onChange={handleFileSelect}
-                    />
+                            Mass Update CFID
+                        </Button>
+                        <Button variant="ghost" size="sm" onClick={() => setSelectedIndices(new Set())}>
+                            Clear Selection
+                        </Button>
+                    </div>
                 </div>
             )}
 
             {/* ---- Data Grid ----------------------------------------------------- */}
             {engine && players.length > 0 && (
-                <div className="data-grid-container">
-                    <div className="data-grid-scroll">
-                        <table className="data-grid">
-                            <thead>
-                                <tr>
-                                    <th className="sortable-th" onClick={() => handleSort('index')}>
-                                        #{sortIndicator('index')}
-                                    </th>
-                                    <th className="sortable-th" onClick={() => handleSort('firstName')}>
-                                        First Name{sortIndicator('firstName')}
-                                    </th>
-                                    <th className="sortable-th" onClick={() => handleSort('lastName')}>
-                                        Last Name{sortIndicator('lastName')}
-                                    </th>
-                                    <th className="sortable-th" onClick={() => handleSort('position')}>
-                                        Pos{sortIndicator('position')}
-                                    </th>
-                                    <th className="sortable-th" onClick={() => handleSort('cfid')}>
-                                        CFID{sortIndicator('cfid')}
-                                    </th>
-                                    <th className="sortable-th" onClick={() => handleSort('overallRating')}>
-                                        OVR{sortIndicator('overallRating')}
-                                    </th>
-                                    <th className="sortable-th" onClick={() => handleSort('threePointRating')}>
-                                        3PT{sortIndicator('threePointRating')}
-                                    </th>
-                                    <th className="sortable-th" onClick={() => handleSort('midRangeRating')}>
-                                        MID{sortIndicator('midRangeRating')}
-                                    </th>
-                                    <th className="sortable-th" onClick={() => handleSort('dunkRating')}>
-                                        DNK{sortIndicator('dunkRating')}
-                                    </th>
-                                    <th className="sortable-th" onClick={() => handleSort('speedRating')}>
-                                        SPD{sortIndicator('speedRating')}
-                                    </th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {visiblePlayers.map((player) => (
-                                    <tr key={player.index}>
-                                        <td className="cell-index">{player.index}</td>
-                                        <td className="cell-name">{player.firstName}</td>
-                                        <td className="cell-name">{player.lastName}</td>
-                                        <td>
-                                            <span className="cell-position">{player.position}</span>
-                                        </td>
-                                        <td>
-                                            {renderEditable(player, 'cfid', player.cfid, 'cell-cfid')}
-                                        </td>
-                                        <td>
-                                            {renderEditable(player, 'overallRating', player.overallRating, ratingClass(player.overallRating))}
-                                        </td>
-                                        <td>
-                                            {renderEditable(player, 'threePointRating', player.threePointRating, ratingClass(player.threePointRating))}
-                                        </td>
-                                        <td>
-                                            {renderEditable(player, 'midRangeRating', player.midRangeRating, ratingClass(player.midRangeRating))}
-                                        </td>
-                                        <td>
-                                            {renderEditable(player, 'dunkRating', player.dunkRating, ratingClass(player.dunkRating))}
-                                        </td>
-                                        <td>
-                                            {renderEditable(player, 'speedRating', player.speedRating, ratingClass(player.speedRating))}
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
+                <div className="rounded-2xl overflow-hidden border border-border animate-fade-in">
+                    <div className="overflow-auto max-h-[520px]">
+                        <Table>
+                            <TableHeader>
+                                <TableRow className="bg-secondary/50">
+                                    {([
+                                        ['index', '#'],
+                                        ['firstName', 'First Name'],
+                                        ['lastName', 'Last Name'],
+                                        ['position', 'Pos'],
+                                        ['cfid', 'CFID'],
+                                        ['overallRating', 'OVR'],
+                                        ['threePointRating', '3PT'],
+                                        ['midRangeRating', 'MID'],
+                                        ['dunkRating', 'DNK'],
+                                        ['speedRating', 'SPD'],
+                                    ] as [SortKey, string][]).map(([key, label]) => (
+                                        <TableHead
+                                            key={key}
+                                            className="cursor-pointer select-none hover:text-primary transition-colors text-xs uppercase tracking-wider"
+                                            onClick={() => handleSort(key)}
+                                        >
+                                            {label}{sortIndicator(key)}
+                                        </TableHead>
+                                    ))}
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {visiblePlayers.map((player) => {
+                                    const isRowSelected = selectedIndices.has(player.originalIndex);
+                                    return (
+                                        <TableRow
+                                            key={player.index}
+                                            className={`cursor-pointer transition-colors ${isRowSelected ? 'bg-primary/5 shadow-[inset_3px_0_0_hsl(var(--primary))]' : ''
+                                                }`}
+                                            onClick={(e) => handleRowClick(player.originalIndex, e)}
+                                        >
+                                            <TableCell className="text-muted-foreground font-mono text-xs">
+                                                {player.index}
+                                            </TableCell>
+                                            <TableCell className="font-medium">{player.firstName}</TableCell>
+                                            <TableCell className="font-medium">{player.lastName}</TableCell>
+                                            <TableCell>
+                                                <Badge variant="secondary" className="text-xs">
+                                                    {player.position}
+                                                </Badge>
+                                            </TableCell>
+                                            <TableCell>
+                                                {renderEditable(player, 'cfid', player.cfid, 'text-primary font-semibold')}
+                                            </TableCell>
+                                            <TableCell onClick={(e) => { e.stopPropagation(); startEditing(player.index, 'overallRating', player.overallRating); }}>
+                                                <AttributeGauge label="OVR" value={player.overallRating} />
+                                            </TableCell>
+                                            <TableCell onClick={(e) => { e.stopPropagation(); startEditing(player.index, 'threePointRating', player.threePointRating); }}>
+                                                <AttributeGauge label="3PT" value={player.threePointRating} />
+                                            </TableCell>
+                                            <TableCell onClick={(e) => { e.stopPropagation(); startEditing(player.index, 'midRangeRating', player.midRangeRating); }}>
+                                                <AttributeGauge label="MID" value={player.midRangeRating} />
+                                            </TableCell>
+                                            <TableCell onClick={(e) => { e.stopPropagation(); startEditing(player.index, 'dunkRating', player.dunkRating); }}>
+                                                <AttributeGauge label="DNK" value={player.dunkRating} />
+                                            </TableCell>
+                                            <TableCell onClick={(e) => { e.stopPropagation(); startEditing(player.index, 'speedRating', player.speedRating); }}>
+                                                <AttributeGauge label="SPD" value={player.speedRating} />
+                                            </TableCell>
+                                        </TableRow>
+                                    );
+                                })}
+                            </TableBody>
+                        </Table>
                     </div>
 
                     {/* ---- Pagination ------------------------------------------------ */}
-                    <div className="pagination">
-                        <div className="pagination-info">
+                    <div className="flex items-center justify-between px-6 py-3 border-t border-border bg-card">
+                        <div className="text-sm text-muted-foreground">
                             Showing {pageStart + 1}–{pageEnd} of {sortedPlayers.length} players
                             {searchQuery && ` (filtered from ${players.length})`}
                         </div>
-                        <div className="pagination-controls">
-                            <button
-                                className="pagination-btn"
-                                disabled={currentPage === 0}
-                                onClick={() => setCurrentPage(0)}
-                                title="First page"
-                            >
-                                ⟪
-                            </button>
-                            <button
-                                className="pagination-btn"
-                                disabled={currentPage === 0}
-                                onClick={() => setCurrentPage((p) => p - 1)}
-                                title="Previous page"
-                            >
-                                ‹
-                            </button>
-
+                        <div className="flex gap-1">
+                            <Button variant="outline" size="icon-xs" disabled={currentPage === 0} onClick={() => setCurrentPage(0)} title="First page">⟪</Button>
+                            <Button variant="outline" size="icon-xs" disabled={currentPage === 0} onClick={() => setCurrentPage((p) => p - 1)} title="Previous page">‹</Button>
                             {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
                                 const start = Math.max(0, Math.min(currentPage - 2, totalPages - 5));
                                 const page = start + i;
                                 if (page >= totalPages) return null;
                                 return (
-                                    <button
+                                    <Button
                                         key={page}
-                                        className={`pagination-btn ${page === currentPage ? 'pagination-btn--active' : ''}`}
+                                        variant={page === currentPage ? 'default' : 'outline'}
+                                        size="icon-xs"
                                         onClick={() => setCurrentPage(page)}
                                     >
                                         {page + 1}
-                                    </button>
+                                    </Button>
                                 );
                             })}
-
-                            <button
-                                className="pagination-btn"
-                                disabled={currentPage >= totalPages - 1}
-                                onClick={() => setCurrentPage((p) => p + 1)}
-                                title="Next page"
-                            >
-                                ›
-                            </button>
-                            <button
-                                className="pagination-btn"
-                                disabled={currentPage >= totalPages - 1}
-                                onClick={() => setCurrentPage(totalPages - 1)}
-                                title="Last page"
-                            >
-                                ⟫
-                            </button>
+                            <Button variant="outline" size="icon-xs" disabled={currentPage >= totalPages - 1} onClick={() => setCurrentPage((p) => p + 1)} title="Next page">›</Button>
+                            <Button variant="outline" size="icon-xs" disabled={currentPage >= totalPages - 1} onClick={() => setCurrentPage(totalPages - 1)} title="Last page">⟫</Button>
                         </div>
                     </div>
                 </div>
@@ -644,40 +737,100 @@ export default function RosterDashboard() {
 
             {/* ---- Empty state (file loaded but no players found) ---------------- */}
             {engine && players.length === 0 && (
-                <div className="card" style={{ marginTop: 16 }}>
-                    <div className="empty-state">
-                        <div className="empty-state-icon">📭</div>
-                        <p className="empty-state-text">
-                            No player records found.<br />
-                            The player table offset may not match this file. Check that this is an NBA 2K14 .ROS file.
-                        </p>
-                    </div>
+                <div className="bg-card border border-border rounded-2xl p-16 mt-4 flex flex-col items-center text-center">
+                    <div className="text-5xl opacity-30 mb-4">📭</div>
+                    <p className="text-muted-foreground text-sm">
+                        No player records found.<br />
+                        The player table offset may not match this file. Check that this is an NBA 2K14 .ROS file.
+                    </p>
                 </div>
             )}
+
+            {/* ---- Profile Sheet (shadcn) ---- */}
+            <Sheet open={profileOpen} onOpenChange={setProfileOpen}>
+                <SheetContent side="right" className="w-[420px] sm:max-w-[420px] overflow-y-auto">
+                    {profilePlayer && (
+                        <>
+                            <SheetHeader className="bg-gradient-to-b from-primary/5 to-transparent border-b border-border pb-4">
+                                <div className="flex items-center gap-3">
+                                    <SheetTitle className="text-2xl font-extrabold">
+                                        {profilePlayer.firstName} {profilePlayer.lastName}
+                                    </SheetTitle>
+                                    <Badge variant="secondary">{profilePlayer.position}</Badge>
+                                </div>
+                                <SheetDescription className="font-mono text-primary font-semibold">
+                                    CFID: {profilePlayer.cfid}
+                                </SheetDescription>
+                            </SheetHeader>
+
+                            <div className="p-6 space-y-6">
+                                {/* Radar Chart */}
+                                <div>
+                                    <h3 className="text-xs uppercase tracking-wider text-muted-foreground mb-3 flex items-center gap-2 after:content-[''] after:flex-1 after:h-px after:bg-border">
+                                        Attribute Visualization
+                                    </h3>
+                                    <RadarChart player={profilePlayer} />
+                                </div>
+
+                                {/* Stat Cards */}
+                                <div className="grid grid-cols-2 gap-3">
+                                    <div className="bg-secondary border border-border rounded-xl p-4 text-center transition-all hover:-translate-y-0.5 hover:shadow-sm">
+                                        <div className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Overall</div>
+                                        <div className={`text-3xl font-black font-mono ${profilePlayer.overallRating >= 80 ? 'rating-text-high' : 'rating-text-med'}`}>
+                                            {profilePlayer.overallRating}
+                                        </div>
+                                    </div>
+                                    <div className="bg-secondary border border-border rounded-xl p-4 text-center transition-all hover:-translate-y-0.5 hover:shadow-sm">
+                                        <div className="text-xs font-medium text-muted-foreground uppercase tracking-wider">3-Point</div>
+                                        <div className="text-3xl font-black font-mono">
+                                            {profilePlayer.threePointRating}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Detail Bars */}
+                                <div>
+                                    <h3 className="text-xs uppercase tracking-wider text-muted-foreground mb-3 flex items-center gap-2 after:content-[''] after:flex-1 after:h-px after:bg-border">
+                                        Core Ratings
+                                    </h3>
+                                    <div className="space-y-4">
+                                        {([
+                                            ['Mid-Range', profilePlayer.midRangeRating],
+                                            ['Dunk', profilePlayer.dunkRating],
+                                            ['Speed', profilePlayer.speedRating],
+                                        ] as [string, number][]).map(([name, val]) => (
+                                            <div key={name} className="grid grid-cols-[80px_1fr_36px] items-center gap-4">
+                                                <span className="text-sm font-medium text-muted-foreground">{name}</span>
+                                                <div className="h-1.5 bg-background rounded-full overflow-hidden">
+                                                    <div
+                                                        className="h-full bg-gradient-to-r from-primary to-primary/70 rounded-full transition-all duration-500"
+                                                        style={{ width: `${val}%` }}
+                                                    />
+                                                </div>
+                                                <span className="font-mono text-sm font-bold text-right">{val}</span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
+                        </>
+                    )}
+                </SheetContent>
+            </Sheet>
 
             {/* ---- Status Bar ---------------------------------------------------- */}
-            <div className="status-bar">
-                <div className="status-bar-item">
-                    <div className={`status-dot ${engine ? '' : 'status-dot--idle'}`} />
+            <div className="flex items-center justify-between px-4 py-2 bg-card border border-border rounded-xl mt-6 text-xs text-muted-foreground animate-fade-in">
+                <div className="flex items-center gap-1.5">
+                    <div className={`w-1.5 h-1.5 rounded-full ${engine ? 'bg-green-500 shadow-[0_0_6px_rgb(74,222,128)]' : 'bg-muted-foreground'}`} />
                     <span>{engine ? 'File loaded – editing active' : 'No file loaded'}</span>
                 </div>
-                <div className="status-bar-item">
-                    <span>
-                        Engine: {engineType === 'wasm' ? '⚡ Native C++ (Wasm)' : '🔧 JS Fallback'}
-                    </span>
+                <div>
+                    Engine: {engineType === 'wasm' ? '⚡ Native C++ (Wasm)' : '🔧 JS Fallback'}
                 </div>
-                <div className="status-bar-item">
-                    <span>v2.0.0{editHistory.length > 0 ? ` • ${editHistory.length} unsaved edit(s)` : ''}</span>
+                <div>
+                    v4.0.0 shadcn/ui • {editHistory.length} unsaved edits
                 </div>
             </div>
-
-            {/* ---- Toast Notification -------------------------------------------- */}
-            {toast && (
-                <div className={`toast toast--${toast.type}`}>
-                    <span>{toast.type === 'success' ? '✅' : toast.type === 'error' ? '❌' : 'ℹ️'}</span>
-                    <span>{toast.message}</span>
-                </div>
-            )}
         </div>
     );
 }
