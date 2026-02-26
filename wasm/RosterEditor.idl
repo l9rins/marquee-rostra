@@ -30,6 +30,20 @@ interface Player {
 
     long get_position();
 
+    // -- Data-driven (all ratings/tendencies) --
+    long get_rating_by_id(long id);
+    void set_rating_by_id(long id, long displayValue);
+    long get_tendency_by_id(long id);
+    void set_tendency_by_id(long id, long val);
+
+    // -- Hot Zones (14 zones, 2-bit each) --
+    long get_hot_zone(long zoneId);
+    void set_hot_zone(long zoneId, long val);
+
+    // -- Signature Skills (5 slots, 6-bit each) --
+    long get_sig_skill(long slot);
+    void set_sig_skill(long slot, long val);
+
     // Tendencies (bit-packed, 8 bits each)
     long get_tendency_stepback_shot_3pt();
     void set_tendency_stepback_shot_3pt(long val);
