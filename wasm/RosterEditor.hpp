@@ -73,7 +73,7 @@ public:
 
     // Initialize with a raw buffer (from Wasm heap or direct memory).
     // Does NOT take ownership — caller manages the memory.
-    void init(uintptr_t buffer_ptr, int buffer_length);
+    void init(size_t buffer_ptr, int buffer_length);
 
     // Player access
     int     get_player_count() const;
@@ -83,7 +83,7 @@ public:
     void save_and_recalculate_checksum();
 
     // Get a pointer to the buffer (for JS to read back the modified data).
-    uintptr_t get_buffer_ptr() const;
+    size_t    get_buffer_ptr() const;
     int       get_buffer_length() const;
 
 private:

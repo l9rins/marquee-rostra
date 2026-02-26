@@ -56,6 +56,8 @@ export class WasmEngine implements IRosterEngine {
         try {
             editor.init(ptr, fileBuffer.byteLength);
         } catch (err) {
+            // Clean up BOTH the heap and the proxy object on failure
+            (editor as unknown as { delete: () => void }).delete();
             module._free(ptr);
             throw err;
         }
@@ -63,32 +65,52 @@ export class WasmEngine implements IRosterEngine {
         return new WasmEngine(module, editor, ptr, fileBuffer.byteLength);
     }
 
+    private static loadingPromise: Promise<RosterEditorModule> | null = null;
+
     /**
      * Load the Emscripten module by fetching the compiled JS glue from public/.
      * Uses globalThis to retrieve the factory function set by the Emscripten output.
+     * Implements a Promise Lock to prevent duplicate script injections.
      */
     private static async loadEmscriptenModule(): Promise<RosterEditorModule> {
-        // Check if already loaded
-        const existing = (globalThis as Record<string, unknown>)['RosterEditorModule'];
-        if (typeof existing === 'function') {
-            return (existing as (config?: Record<string, unknown>) => Promise<RosterEditorModule>)();
+        // 1. Check if already loading/loaded
+        if (WasmEngine.loadingPromise) {
+            return WasmEngine.loadingPromise;
         }
 
-        // Inject the script tag
-        await new Promise<void>((resolve, reject) => {
-            const script = document.createElement('script');
-            script.src = '/roster_editor.js';
-            script.onload = () => resolve();
-            script.onerror = () => reject(new Error('Wasm module not found at /roster_editor.js'));
-            document.head.appendChild(script);
-        });
-
+        // 2. Already defined in global scope?
         const factory = (globalThis as Record<string, unknown>)['RosterEditorModule'];
-        if (typeof factory !== 'function') {
-            throw new Error('RosterEditorModule factory not found after script load');
+        if (typeof factory === 'function') {
+            return (factory as (config?: Record<string, unknown>) => Promise<RosterEditorModule>)();
         }
 
-        return (factory as (config?: Record<string, unknown>) => Promise<RosterEditorModule>)();
+        // 3. Start loading and store the promise (the Lock)
+        WasmEngine.loadingPromise = (async () => {
+            try {
+                await new Promise<void>((resolve, reject) => {
+                    const script = document.createElement('script');
+                    // Cache busting: append timestamp in dev or every load to ensure freshest C++
+                    const timestamp = Date.now();
+                    script.src = `/roster_editor.js?t=${timestamp}`;
+                    script.onload = () => resolve();
+                    script.onerror = () => reject(new Error('Wasm module not found at /roster_editor.js'));
+                    document.head.appendChild(script);
+                });
+
+                const loadedFactory = (globalThis as Record<string, unknown>)['RosterEditorModule'];
+                if (typeof loadedFactory !== 'function') {
+                    throw new Error('RosterEditorModule factory not found after script load');
+                }
+
+                return (loadedFactory as (config?: Record<string, unknown>) => Promise<RosterEditorModule>)();
+            } catch (err) {
+                // Reset lock on failure so we can try again
+                WasmEngine.loadingPromise = null;
+                throw err;
+            }
+        })();
+
+        return WasmEngine.loadingPromise;
     }
 
     getPlayerCount(): number {
@@ -158,7 +180,12 @@ export class WasmEngine implements IRosterEngine {
     }
 
     dispose(): void {
-        // Free the heap memory allocated for the file buffer
+        // 1. Delete the C++ RosterEditor proxy object
+        if (this.editor) {
+            (this.editor as unknown as { delete: () => void }).delete();
+        }
+
+        // 2. Free the heap memory allocated for the file buffer
         if (this.heapPtr !== 0) {
             this.module._free(this.heapPtr);
             this.heapPtr = 0;

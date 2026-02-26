@@ -252,7 +252,7 @@ RosterEditor::~RosterEditor() {
     // We do NOT free the buffer — JS owns it via Module._malloc/_free
 }
 
-void RosterEditor::init(uintptr_t buffer_ptr, int buffer_length) {
+void RosterEditor::init(size_t buffer_ptr, int buffer_length) {
     buffer_        = reinterpret_cast<uint8_t*>(buffer_ptr);
     buffer_length_ = static_cast<size_t>(buffer_length);
 
@@ -393,8 +393,8 @@ void RosterEditor::save_and_recalculate_checksum() {
     buffer_[3] = static_cast<uint8_t>((swapped >> 24) & 0xFF);
 }
 
-uintptr_t RosterEditor::get_buffer_ptr() const {
-    return reinterpret_cast<uintptr_t>(buffer_);
+size_t RosterEditor::get_buffer_ptr() const {
+    return reinterpret_cast<size_t>(buffer_);
 }
 
 int RosterEditor::get_buffer_length() const {
