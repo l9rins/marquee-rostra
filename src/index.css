@@ -910,6 +910,30 @@ body::before {
   font-size: 0.875rem;
 }
 
+/* ---- Wasm Engine Badge ---------------------------------------------------- */
+.badge--wasm {
+  background: linear-gradient(135deg, rgba(76, 175, 80, 0.12) 0%, rgba(255, 152, 0, 0.12) 100%);
+  color: var(--green);
+  border-color: rgba(76, 175, 80, 0.2);
+  animation: pulse 2s ease-in-out infinite;
+}
+
+/* ---- Sortable Table Headers ----------------------------------------------- */
+.sortable-th {
+  cursor: pointer;
+  user-select: none;
+  transition: color var(--duration-fast);
+}
+
+.sortable-th:hover {
+  color: var(--accent-primary);
+}
+
+/* ---- Info Toast ----------------------------------------------------------- */
+.toast--info {
+  border-color: rgba(66, 165, 245, 0.3);
+}
+
 /* ---- Responsive ----------------------------------------------------------- */
 @media (max-width: 768px) {
   .app-shell {

@@ -25,6 +25,9 @@ export interface WasmPlayer {
   get_last_name(): string;
 
   get_position(): number;
+
+  /** Embind objects must be deleted to prevent memory leaks */
+  delete(): void;
 }
 
 export interface WasmRosterEditor {
@@ -50,8 +53,3 @@ export interface RosterEditorModule {
   calledRun?: boolean;
 }
 
-declare global {
-  interface Window {
-    RosterEditorModule?: (config?: Record<string, unknown>) => Promise<RosterEditorModule>;
-  }
-}

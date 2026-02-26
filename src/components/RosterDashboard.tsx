@@ -1,287 +1,57 @@
 // ============================================================================
 // RosterDashboard.tsx — Main UI for the NBA 2K14 .ROS Roster Editor
 // ============================================================================
-// Features:
-//   1. Zero-copy file upload (drag-and-drop + file picker)
-//   2. Pure-JS fallback engine (no Wasm needed for dev/test)
+// Architecture:
+//   1. Engine abstraction: Wasm-first with JS fallback (src/engine/)
+//   2. Zero-copy file upload (drag-and-drop + file picker)
 //   3. Editable data grid with inline cell editing
-//   4. Search/filter by player name or CFID
+//   4. Column sorting, keyboard nav, undo support
 //   5. Export with CRC32 checksum recalculation
 // ============================================================================
 
 import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
+import type { IRosterEngine, PlayerData, EditableField, RatingField, EngineType } from '../engine/RosterEngine';
+import { createEngine } from '../engine/createEngine';
 
 // ============================================================================
-// Pure-JS Fallback Engine (mirrors the C++ logic for dev/test)
-// ============================================================================
-
-/** CRC32 lookup table (IEEE 802.3 polynomial, same as zlib) */
-function makeCRC32Table(): Uint32Array {
-    const table = new Uint32Array(256);
-    for (let n = 0; n < 256; n++) {
-        let c = n;
-        for (let k = 0; k < 8; k++) {
-            c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1);
-        }
-        table[n] = c >>> 0;
-    }
-    return table;
-}
-
-const CRC32_TABLE = makeCRC32Table();
-
-function crc32(data: Uint8Array, offset: number = 0, length?: number): number {
-    let crc = 0xFFFFFFFF;
-    const end = offset + (length ?? data.length - offset);
-    for (let i = offset; i < end; i++) {
-        crc = CRC32_TABLE[(crc ^ data[i]) & 0xFF] ^ (crc >>> 8);
-    }
-    return (crc ^ 0xFFFFFFFF) >>> 0;
-}
-
-function bswap32(value: number): number {
-    return (
-        ((value >> 24) & 0xFF) |
-        ((value >> 8) & 0xFF00) |
-        ((value << 8) & 0xFF0000) |
-        ((value << 24) & 0xFF000000)
-    ) >>> 0;
-}
-
-// ---- Player record constants (mirroring RosterEditor.cpp) -------------------
-const TEAM_TABLE_MARKER = 0x2850EC;
-const CFID_OFFSET = 28;
-const RATING_THREE_PT = 44;
-const RATING_MID_RANGE = 45;
-const RATING_DUNK = 46;
-const RATING_SPEED = 48;
-const RATING_OVERALL = 30;
-const FIRST_NAME_OFFSET = 52;
-const LAST_NAME_OFFSET = 56;
-const POSITION_OFFSET = 60;
-const DEFAULT_RECORD_SIZE = 128;
-const MAX_PLAYERS = 1500;
-
-function rawToDisplay(raw: number): number {
-    return Math.floor(raw / 3) + 25;
-}
-
-function displayToRaw(display: number): number {
-    return Math.max(0, Math.min(255, (display - 25) * 3));
-}
-
-/** Position index → display string */
-const POSITION_NAMES: Record<number, string> = {
-    0: 'PG', 1: 'SG', 2: 'SF', 3: 'PF', 4: 'C',
-};
-
-// ---- JS Player Data --------------------------------------------------------
-interface PlayerData {
-    index: number;
-    recordOffset: number;
-    cfid: number;
-    firstName: string;
-    lastName: string;
-    threePointRating: number;
-    midRangeRating: number;
-    dunkRating: number;
-    speedRating: number;
-    overallRating: number;
-    position: string;
-}
-
-// ---- RosterEngineJS --------------------------------------------------------
-class RosterEngineJS {
-    private buffer: Uint8Array;
-    private playerTableOffset: number = 0;
-    private playerCount: number = 0;
-
-    constructor(buffer: ArrayBuffer) {
-        this.buffer = new Uint8Array(buffer);
-        this.discoverPlayerTable();
-    }
-
-    private readU16LE(offset: number): number {
-        if (offset + 1 >= this.buffer.length) return 0;
-        return this.buffer[offset] | (this.buffer[offset + 1] << 8);
-    }
-
-    private writeU16LE(offset: number, value: number): void {
-        if (offset + 1 >= this.buffer.length) return;
-        this.buffer[offset] = value & 0xFF;
-        this.buffer[offset + 1] = (value >> 8) & 0xFF;
-    }
-
-    private readU32LE(offset: number): number {
-        if (offset + 3 >= this.buffer.length) return 0;
-        return (
-            this.buffer[offset] |
-            (this.buffer[offset + 1] << 8) |
-            (this.buffer[offset + 2] << 16) |
-            (this.buffer[offset + 3] << 24)
-        ) >>> 0;
-    }
-
-    private readStringAt(ptr: number, maxLen: number = 64): string {
-        if (ptr === 0 || ptr >= this.buffer.length) return '';
-        let str = '';
-        for (let i = ptr; i < Math.min(ptr + maxLen, this.buffer.length); i++) {
-            if (this.buffer[i] === 0) break;
-            const ch = this.buffer[i];
-            if (ch < 32 || ch > 126) break;
-            str += String.fromCharCode(ch);
-        }
-        return str;
-    }
-
-    private readName(absOffset: number): string {
-        if (absOffset + 3 >= this.buffer.length) return '';
-        const ptr = this.readU32LE(absOffset);
-        if (ptr > 0 && ptr < this.buffer.length) {
-            const name = this.readStringAt(ptr);
-            if (name) return name;
-        }
-        // Fallback: try inline ASCII
-        return this.readStringAt(absOffset, 32) || 'Unknown';
-    }
-
-    private discoverPlayerTable(): void {
-        if (this.buffer.length < TEAM_TABLE_MARKER + 64) {
-            this.playerTableOffset = 0;
-            this.playerCount = 0;
-            return;
-        }
-
-        let found = false;
-        for (let offset = TEAM_TABLE_MARKER; offset < this.buffer.length - DEFAULT_RECORD_SIZE * 2; offset += 4) {
-            const cfidOff1 = offset + CFID_OFFSET;
-            const cfidOff2 = offset + DEFAULT_RECORD_SIZE + CFID_OFFSET;
-            if (cfidOff2 + 1 >= this.buffer.length) break;
-
-            const cfid1 = this.readU16LE(cfidOff1);
-            const cfid2 = this.readU16LE(cfidOff2);
-
-            if (cfid1 > 0 && cfid1 < 10000 && cfid2 > 0 && cfid2 < 10000) {
-                this.playerTableOffset = offset;
-                found = true;
-                break;
-            }
-        }
-
-        if (!found) {
-            this.playerTableOffset = 0;
-            this.playerCount = 0;
-            return;
-        }
-
-        // Count players
-        this.playerCount = 0;
-        for (
-            let offset = this.playerTableOffset;
-            offset + DEFAULT_RECORD_SIZE <= this.buffer.length && this.playerCount < MAX_PLAYERS;
-            offset += DEFAULT_RECORD_SIZE
-        ) {
-            const cfid = this.readU16LE(offset + CFID_OFFSET);
-            if (cfid === 0 && this.playerCount > 10) {
-                const nextCfid = this.readU16LE(offset + DEFAULT_RECORD_SIZE + CFID_OFFSET);
-                if (nextCfid === 0) break;
-            }
-            this.playerCount++;
-        }
-    }
-
-    getPlayerCount(): number {
-        return this.playerCount;
-    }
-
-    getPlayer(index: number): PlayerData {
-        const recordOffset = this.playerTableOffset + index * DEFAULT_RECORD_SIZE;
-
-        const cfid = this.readU16LE(recordOffset + CFID_OFFSET);
-        const firstName = this.readName(recordOffset + FIRST_NAME_OFFSET);
-        const lastName = this.readName(recordOffset + LAST_NAME_OFFSET);
-        const posRaw = this.buffer[recordOffset + POSITION_OFFSET] ?? 0;
-
-        return {
-            index,
-            recordOffset,
-            cfid,
-            firstName: firstName || `Player`,
-            lastName: lastName || `#${index}`,
-            threePointRating: rawToDisplay(this.buffer[recordOffset + RATING_THREE_PT] ?? 0),
-            midRangeRating: rawToDisplay(this.buffer[recordOffset + RATING_MID_RANGE] ?? 0),
-            dunkRating: rawToDisplay(this.buffer[recordOffset + RATING_DUNK] ?? 0),
-            speedRating: rawToDisplay(this.buffer[recordOffset + RATING_SPEED] ?? 0),
-            overallRating: rawToDisplay(this.buffer[recordOffset + RATING_OVERALL] ?? 0),
-            position: POSITION_NAMES[posRaw] ?? `${posRaw}`,
-        };
-    }
-
-    setCFID(index: number, newCfid: number): void {
-        const recordOffset = this.playerTableOffset + index * DEFAULT_RECORD_SIZE;
-        this.writeU16LE(recordOffset + CFID_OFFSET, newCfid);
-    }
-
-    setRating(index: number, ratingOffset: number, displayValue: number): void {
-        const recordOffset = this.playerTableOffset + index * DEFAULT_RECORD_SIZE;
-        const absOffset = recordOffset + ratingOffset;
-        if (absOffset < this.buffer.length) {
-            this.buffer[absOffset] = displayToRaw(displayValue);
-        }
-    }
-
-    saveAndRecalculateChecksum(): Uint8Array {
-        // 1. CRC32 over payload (bytes 4..end)
-        const crcValue = crc32(this.buffer, 4, this.buffer.length - 4);
-        // 2. Byte-swap
-        const swapped = bswap32(crcValue);
-        // 3. Write first 4 bytes (LE)
-        this.buffer[0] = swapped & 0xFF;
-        this.buffer[1] = (swapped >> 8) & 0xFF;
-        this.buffer[2] = (swapped >> 16) & 0xFF;
-        this.buffer[3] = (swapped >> 24) & 0xFF;
-        return this.buffer;
-    }
-
-    getBuffer(): Uint8Array {
-        return this.buffer;
-    }
-
-    getFileSize(): number {
-        return this.buffer.length;
-    }
-}
-
-// ============================================================================
-// React Component
+// Constants
 // ============================================================================
 
 const ROWS_PER_PAGE = 25;
 
+type SortKey = 'index' | 'firstName' | 'lastName' | 'cfid' | 'overallRating'
+    | 'threePointRating' | 'midRangeRating' | 'dunkRating' | 'speedRating' | 'position';
+type SortDir = 'asc' | 'desc';
+
 type EditingCell = {
     playerIndex: number;
-    field: 'cfid' | 'threePointRating' | 'midRangeRating' | 'dunkRating' | 'speedRating' | 'overallRating';
+    field: EditableField;
 };
 
 type ToastState = {
     message: string;
-    type: 'success' | 'error';
+    type: 'success' | 'error' | 'info';
 } | null;
 
-const RATING_FIELD_TO_OFFSET: Record<string, number> = {
-    threePointRating: RATING_THREE_PT,
-    midRangeRating: RATING_MID_RANGE,
-    dunkRating: RATING_DUNK,
-    speedRating: RATING_SPEED,
-    overallRating: RATING_OVERALL,
-};
+interface EditHistoryEntry {
+    playerIndex: number;
+    field: EditableField;
+    oldValue: number;
+    newValue: number;
+}
+
+// ============================================================================
+// Component
+// ============================================================================
 
 export default function RosterDashboard() {
     // ---- State ----------------------------------------------------------------
-    const [engine, setEngine] = useState<RosterEngineJS | null>(null);
+    const [engine, setEngine] = useState<IRosterEngine | null>(null);
+    const [engineType, setEngineType] = useState<EngineType>('js');
     const [players, setPlayers] = useState<PlayerData[]>([]);
-    const [fileName, setFileName] = useState<string>('');
-    const [fileSize, setFileSize] = useState<number>(0);
+    const [fileName, setFileName] = useState('');
+    const [fileSize, setFileSize] = useState(0);
+    const [parseTimeMs, setParseTimeMs] = useState(0);
     const [isDragging, setIsDragging] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
@@ -289,6 +59,9 @@ export default function RosterDashboard() {
     const [editingCell, setEditingCell] = useState<EditingCell | null>(null);
     const [editValue, setEditValue] = useState('');
     const [toast, setToast] = useState<ToastState>(null);
+    const [sortKey, setSortKey] = useState<SortKey>('index');
+    const [sortDir, setSortDir] = useState<SortDir>('asc');
+    const [editHistory, setEditHistory] = useState<EditHistoryEntry[]>([]);
 
     const fileInputRef = useRef<HTMLInputElement>(null);
     const editInputRef = useRef<HTMLInputElement>(null);
@@ -309,14 +82,55 @@ export default function RosterDashboard() {
         }
     }, [editingCell]);
 
-    // ---- File processing ------------------------------------------------------
-    const processFile = useCallback((buffer: ArrayBuffer, name: string) => {
+    // ---- Dispose engine on unmount / new file ----------------------------------
+    useEffect(() => {
+        return () => {
+            engine?.dispose();
+        };
+    }, [engine]);
+
+    // ---- Ctrl+Z undo ----------------------------------------------------------
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if ((e.ctrlKey || e.metaKey) && e.key === 'z' && editHistory.length > 0) {
+                e.preventDefault();
+                const last = editHistory[editHistory.length - 1];
+                if (engine) {
+                    if (last.field === 'cfid') {
+                        engine.setCFID(last.playerIndex, last.oldValue);
+                    } else {
+                        engine.setRating(last.playerIndex, last.field as RatingField, last.oldValue);
+                    }
+                    const updatedPlayer = engine.getPlayer(last.playerIndex);
+                    setPlayers((prev) =>
+                        prev.map((p) => (p.index === last.playerIndex ? updatedPlayer : p))
+                    );
+                    setEditHistory((prev) => prev.slice(0, -1));
+                    setToast({ message: `Undo: restored ${last.field} for player #${last.playerIndex}`, type: 'info' });
+                }
+            }
+        };
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [engine, editHistory]);
+
+    // ---- File processing (async — supports Wasm loading) ----------------------
+    const processFile = useCallback(async (buffer: ArrayBuffer, name: string) => {
         setIsLoading(true);
+        const t0 = performance.now();
         try {
-            const eng = new RosterEngineJS(buffer);
+            // Dispose previous engine if any
+            engine?.dispose();
+
+            const eng = await createEngine(buffer);
+            const elapsed = performance.now() - t0;
+
             setEngine(eng);
+            setEngineType(eng.type);
             setFileName(name);
             setFileSize(buffer.byteLength);
+            setParseTimeMs(Math.round(elapsed));
+            setEditHistory([]);
 
             const count = eng.getPlayerCount();
             const playerList: PlayerData[] = [];
@@ -326,14 +140,24 @@ export default function RosterDashboard() {
             setPlayers(playerList);
             setCurrentPage(0);
             setSearchQuery('');
-            setToast({ message: `Loaded ${count} players from ${name}`, type: 'success' });
+            setSortKey('index');
+            setSortDir('asc');
+
+            const engineLabel = eng.type === 'wasm' ? '⚡ Wasm C++' : '🔧 JS';
+            setToast({
+                message: `Loaded ${count} players via ${engineLabel} engine (${Math.round(elapsed)}ms)`,
+                type: 'success',
+            });
         } catch (err) {
             console.error('Failed to parse .ROS file:', err);
-            setToast({ message: `Error: ${err instanceof Error ? err.message : 'Unknown error'}`, type: 'error' });
+            setToast({
+                message: `Error: ${err instanceof Error ? err.message : 'Unknown error'}`,
+                type: 'error',
+            });
         } finally {
             setIsLoading(false);
         }
-    }, []);
+    }, [engine]);
 
     // ---- Drag & Drop handlers -------------------------------------------------
     const handleDragOver = useCallback((e: React.DragEvent) => {
@@ -390,19 +214,48 @@ export default function RosterDashboard() {
         );
     }, [players, searchQuery]);
 
-    // ---- Pagination -----------------------------------------------------------
-    const totalPages = Math.ceil(filteredPlayers.length / ROWS_PER_PAGE);
-    const pageStart = currentPage * ROWS_PER_PAGE;
-    const pageEnd = Math.min(pageStart + ROWS_PER_PAGE, filteredPlayers.length);
-    const visiblePlayers = filteredPlayers.slice(pageStart, pageEnd);
+    // ---- Sorting --------------------------------------------------------------
+    const sortedPlayers = useMemo(() => {
+        const sorted = [...filteredPlayers];
+        sorted.sort((a, b) => {
+            const aVal = a[sortKey];
+            const bVal = b[sortKey];
+            if (typeof aVal === 'string' && typeof bVal === 'string') {
+                const cmp = aVal.localeCompare(bVal);
+                return sortDir === 'asc' ? cmp : -cmp;
+            }
+            const cmp = (aVal as number) - (bVal as number);
+            return sortDir === 'asc' ? cmp : -cmp;
+        });
+        return sorted;
+    }, [filteredPlayers, sortKey, sortDir]);
 
-    // Reset page when filtered list changes
+    const handleSort = (key: SortKey) => {
+        if (sortKey === key) {
+            setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'));
+        } else {
+            setSortKey(key);
+            setSortDir('asc');
+        }
+    };
+
+    const sortIndicator = (key: SortKey) => {
+        if (sortKey !== key) return '';
+        return sortDir === 'asc' ? ' ↑' : ' ↓';
+    };
+
+    // ---- Pagination -----------------------------------------------------------
+    const totalPages = Math.ceil(sortedPlayers.length / ROWS_PER_PAGE);
+    const pageStart = currentPage * ROWS_PER_PAGE;
+    const pageEnd = Math.min(pageStart + ROWS_PER_PAGE, sortedPlayers.length);
+    const visiblePlayers = sortedPlayers.slice(pageStart, pageEnd);
+
     useEffect(() => {
         setCurrentPage(0);
-    }, [searchQuery]);
+    }, [searchQuery, sortKey, sortDir]);
 
     // ---- Inline editing -------------------------------------------------------
-    const startEditing = (playerIndex: number, field: EditingCell['field'], currentValue: number) => {
+    const startEditing = (playerIndex: number, field: EditableField, currentValue: number) => {
         setEditingCell({ playerIndex, field });
         setEditValue(String(currentValue));
     };
@@ -416,6 +269,8 @@ export default function RosterDashboard() {
         }
 
         const { playerIndex, field } = editingCell;
+        const currentPlayer = players.find((p) => p.index === playerIndex);
+        const oldValue = currentPlayer ? currentPlayer[field] as number : 0;
 
         if (field === 'cfid') {
             if (value < 0 || value > 65535) {
@@ -425,18 +280,17 @@ export default function RosterDashboard() {
             }
             engine.setCFID(playerIndex, value);
         } else {
-            const ratingOffset = RATING_FIELD_TO_OFFSET[field];
-            if (ratingOffset !== undefined) {
-                if (value < 25 || value > 110) {
-                    setToast({ message: 'Rating must be 25–110', type: 'error' });
-                    setEditingCell(null);
-                    return;
-                }
-                engine.setRating(playerIndex, ratingOffset, value);
+            if (value < 25 || value > 110) {
+                setToast({ message: 'Rating must be 25–110', type: 'error' });
+                setEditingCell(null);
+                return;
             }
+            engine.setRating(playerIndex, field as RatingField, value);
         }
 
-        // Re-read the player data
+        // Record for undo
+        setEditHistory((prev) => [...prev, { playerIndex, field, oldValue, newValue: value }]);
+
         const updatedPlayer = engine.getPlayer(playerIndex);
         setPlayers((prev) =>
             prev.map((p) => (p.index === playerIndex ? updatedPlayer : p))
@@ -468,7 +322,7 @@ export default function RosterDashboard() {
             a.click();
             document.body.removeChild(a);
             URL.revokeObjectURL(url);
-            setToast({ message: 'File saved with recalculated CRC32 checksum ✓', type: 'success' });
+            setToast({ message: 'Binary compiled and CRC32 verified ✓', type: 'success' });
         } catch (err) {
             setToast({ message: `Export failed: ${err instanceof Error ? err.message : 'Unknown'}`, type: 'error' });
         }
@@ -484,9 +338,9 @@ export default function RosterDashboard() {
     // ---- Render helper: editable cell -----------------------------------------
     const renderEditable = (
         player: PlayerData,
-        field: EditingCell['field'],
+        field: EditableField,
         value: number,
-        extraClass: string = ''
+        extraClass = ''
     ) => {
         const isEditing =
             editingCell?.playerIndex === player.index &&
@@ -539,7 +393,11 @@ export default function RosterDashboard() {
                 </div>
                 <div className="app-header-badges">
                     <span className="badge badge--accent">NBA 2K14</span>
-                    <span className="badge badge--info">JS Engine</span>
+                    {engine && (
+                        <span className={`badge ${engineType === 'wasm' ? 'badge--wasm' : 'badge--info'}`}>
+                            {engineType === 'wasm' ? '⚡ Wasm Engine' : '🔧 JS Engine'}
+                        </span>
+                    )}
                     {engine && (
                         <span className="badge badge--success">● Connected</span>
                     )}
@@ -591,6 +449,10 @@ export default function RosterDashboard() {
                         <div className="stat-label">File Size</div>
                     </div>
                     <div className="stat-item">
+                        <div className="stat-value">{parseTimeMs}ms</div>
+                        <div className="stat-label">Parse Time</div>
+                    </div>
+                    <div className="stat-item">
                         <div className="stat-value">{fileName.split('.')[0] || 'Roster'}</div>
                         <div className="stat-label">File Name</div>
                     </div>
@@ -618,6 +480,19 @@ export default function RosterDashboard() {
                         💾 Export .ROS
                     </button>
 
+                    {editHistory.length > 0 && (
+                        <button
+                            className="btn btn--secondary"
+                            onClick={() => {
+                                // Trigger undo via keyboard event simulation
+                                window.dispatchEvent(new KeyboardEvent('keydown', { key: 'z', ctrlKey: true }));
+                            }}
+                            title={`${editHistory.length} edit(s) — Ctrl+Z to undo`}
+                        >
+                            ↩ Undo ({editHistory.length})
+                        </button>
+                    )}
+
                     <button
                         className="btn btn--secondary"
                         onClick={() => fileInputRef.current?.click()}
@@ -642,16 +517,36 @@ export default function RosterDashboard() {
                         <table className="data-grid">
                             <thead>
                                 <tr>
-                                    <th>#</th>
-                                    <th>First Name</th>
-                                    <th>Last Name</th>
-                                    <th>Pos</th>
-                                    <th>CFID</th>
-                                    <th>OVR</th>
-                                    <th>3PT</th>
-                                    <th>MID</th>
-                                    <th>DNK</th>
-                                    <th>SPD</th>
+                                    <th className="sortable-th" onClick={() => handleSort('index')}>
+                                        #{sortIndicator('index')}
+                                    </th>
+                                    <th className="sortable-th" onClick={() => handleSort('firstName')}>
+                                        First Name{sortIndicator('firstName')}
+                                    </th>
+                                    <th className="sortable-th" onClick={() => handleSort('lastName')}>
+                                        Last Name{sortIndicator('lastName')}
+                                    </th>
+                                    <th className="sortable-th" onClick={() => handleSort('position')}>
+                                        Pos{sortIndicator('position')}
+                                    </th>
+                                    <th className="sortable-th" onClick={() => handleSort('cfid')}>
+                                        CFID{sortIndicator('cfid')}
+                                    </th>
+                                    <th className="sortable-th" onClick={() => handleSort('overallRating')}>
+                                        OVR{sortIndicator('overallRating')}
+                                    </th>
+                                    <th className="sortable-th" onClick={() => handleSort('threePointRating')}>
+                                        3PT{sortIndicator('threePointRating')}
+                                    </th>
+                                    <th className="sortable-th" onClick={() => handleSort('midRangeRating')}>
+                                        MID{sortIndicator('midRangeRating')}
+                                    </th>
+                                    <th className="sortable-th" onClick={() => handleSort('dunkRating')}>
+                                        DNK{sortIndicator('dunkRating')}
+                                    </th>
+                                    <th className="sortable-th" onClick={() => handleSort('speedRating')}>
+                                        SPD{sortIndicator('speedRating')}
+                                    </th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -690,7 +585,7 @@ export default function RosterDashboard() {
                     {/* ---- Pagination ------------------------------------------------ */}
                     <div className="pagination">
                         <div className="pagination-info">
-                            Showing {pageStart + 1}–{pageEnd} of {filteredPlayers.length} players
+                            Showing {pageStart + 1}–{pageEnd} of {sortedPlayers.length} players
                             {searchQuery && ` (filtered from ${players.length})`}
                         </div>
                         <div className="pagination-controls">
@@ -767,17 +662,19 @@ export default function RosterDashboard() {
                     <span>{engine ? 'File loaded – editing active' : 'No file loaded'}</span>
                 </div>
                 <div className="status-bar-item">
-                    <span>Engine: JS Fallback</span>
+                    <span>
+                        Engine: {engineType === 'wasm' ? '⚡ Native C++ (Wasm)' : '🔧 JS Fallback'}
+                    </span>
                 </div>
                 <div className="status-bar-item">
-                    <span>v1.0.0 MVP</span>
+                    <span>v2.0.0{editHistory.length > 0 ? ` • ${editHistory.length} unsaved edit(s)` : ''}</span>
                 </div>
             </div>
 
             {/* ---- Toast Notification -------------------------------------------- */}
             {toast && (
                 <div className={`toast toast--${toast.type}`}>
-                    <span>{toast.type === 'success' ? '✅' : '❌'}</span>
+                    <span>{toast.type === 'success' ? '✅' : toast.type === 'error' ? '❌' : 'ℹ️'}</span>
                     <span>{toast.message}</span>
                 </div>
             )}
