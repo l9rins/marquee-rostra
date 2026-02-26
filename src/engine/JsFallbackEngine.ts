@@ -16,8 +16,8 @@ const TEAM_TABLE_MARKER = 0x2850EC;
 const CFID_OFFSET = 28;
 const FIRST_NAME_OFFSET = 52;
 const LAST_NAME_OFFSET = 56;
-const POSITION_OFFSET = 73;
-const DEFAULT_RECORD_SIZE = 477;
+const POSITION_OFFSET = 60;
+const DEFAULT_RECORD_SIZE = 911;
 
 // Rating byte offsets — must exactly match RATING_OFFSETS[] in RosterEditor.cpp
 const RATING_OFFSETS = [

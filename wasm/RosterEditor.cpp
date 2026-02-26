@@ -94,11 +94,12 @@ static constexpr size_t FIRST_NAME_OFFSET = 52;    // Offset to first name point
 static constexpr size_t LAST_NAME_OFFSET  = 56;    // Offset to last name pointer
 
 // Position info
-static constexpr size_t POSITION_OFFSET   = 73;    // Position byte (adjusted for expanded skills)
+static constexpr size_t POSITION_OFFSET   = 60;    // Position byte
 
 // Default player record size (for 2K14 roster format)
-// RED MC handles 355+ fields, requiring a much larger record
-static constexpr size_t DEFAULT_RECORD_SIZE = 477;
+// This is the BINARY byte size of one player record in the .ROS file,
+// NOT the number of logical fields. Confirmed exactly 911 via hex analysis.
+static constexpr size_t DEFAULT_RECORD_SIZE = 911;
 
 // Maximum expected player count
 static constexpr int MAX_PLAYERS = 1500;
