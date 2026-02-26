@@ -1,0 +1,46 @@
+// ============================================================================
+// RosterEditor.idl — WebIDL Interface Definition
+// ============================================================================
+// This file defines the JavaScript-facing API for the Emscripten WebIDL Binder.
+// Note: The actual build uses Embind (bindings.cpp) for simplicity, but this
+// .idl file is provided as the canonical interface contract per specification.
+// ============================================================================
+
+interface Player {
+    long get_cfid();
+    void set_cfid(long new_cfid);
+
+    long get_three_point_rating();
+    void set_three_point_rating(long rating);
+
+    long get_mid_range_rating();
+    void set_mid_range_rating(long rating);
+
+    long get_dunk_rating();
+    void set_dunk_rating(long rating);
+
+    long get_speed_rating();
+    void set_speed_rating(long rating);
+
+    long get_overall_rating();
+    void set_overall_rating(long rating);
+
+    DOMString get_first_name();
+    DOMString get_last_name();
+
+    long get_position();
+};
+
+interface RosterEditor {
+    void RosterEditor();
+
+    void init(long buffer_ptr, long buffer_length);
+    long get_player_count();
+
+    Player get_player(long index);
+
+    void save_and_recalculate_checksum();
+
+    long get_buffer_ptr();
+    long get_buffer_length();
+};

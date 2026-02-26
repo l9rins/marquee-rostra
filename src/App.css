@@ -1,0 +1,6 @@
+/* ============================================================================
+   App.css — Minimal app-level overrides (design system in index.css)
+   ============================================================================ */
+
+/* Intentionally minimal — all design tokens and component styles
+   are in index.css. This file only holds App-specific layout if needed. */
