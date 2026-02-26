@@ -31,6 +31,33 @@ EMSCRIPTEN_BINDINGS(roster_editor_module) {
         .function("get_first_name",          &Player::get_first_name)
         .function("get_last_name",           &Player::get_last_name)
         .function("get_position",            &Player::get_position)
+        // -- Tendencies (bit-packed) --
+        .function("get_tendency_stepback_shot_3pt",  &Player::get_tendency_stepback_shot_3pt)
+        .function("set_tendency_stepback_shot_3pt",  &Player::set_tendency_stepback_shot_3pt)
+        .function("get_tendency_driving_layup",      &Player::get_tendency_driving_layup)
+        .function("set_tendency_driving_layup",      &Player::set_tendency_driving_layup)
+        .function("get_tendency_standing_dunk",      &Player::get_tendency_standing_dunk)
+        .function("set_tendency_standing_dunk",      &Player::set_tendency_standing_dunk)
+        .function("get_tendency_driving_dunk",       &Player::get_tendency_driving_dunk)
+        .function("set_tendency_driving_dunk",       &Player::set_tendency_driving_dunk)
+        .function("get_tendency_post_hook",          &Player::get_tendency_post_hook)
+        .function("set_tendency_post_hook",          &Player::set_tendency_post_hook)
+        // -- Gear (mixed bit-widths) --
+        .function("get_gear_accessory_flag",  &Player::get_gear_accessory_flag)
+        .function("set_gear_accessory_flag",  &Player::set_gear_accessory_flag)
+        .function("get_gear_elbow_pad",       &Player::get_gear_elbow_pad)
+        .function("set_gear_elbow_pad",       &Player::set_gear_elbow_pad)
+        .function("get_gear_wrist_band",      &Player::get_gear_wrist_band)
+        .function("set_gear_wrist_band",      &Player::set_gear_wrist_band)
+        .function("get_gear_headband",        &Player::get_gear_headband)
+        .function("set_gear_headband",        &Player::set_gear_headband)
+        .function("get_gear_socks",           &Player::get_gear_socks)
+        .function("set_gear_socks",           &Player::set_gear_socks)
+        // -- Signatures (byte-aligned) --
+        .function("get_sig_shot_form",        &Player::get_sig_shot_form)
+        .function("set_sig_shot_form",        &Player::set_sig_shot_form)
+        .function("get_sig_shot_base",        &Player::get_sig_shot_base)
+        .function("set_sig_shot_base",        &Player::set_sig_shot_base)
         ;
 
     class_<RosterEditor>("RosterEditor")

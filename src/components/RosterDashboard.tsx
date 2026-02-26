@@ -10,7 +10,7 @@
 // ============================================================================
 
 import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
-import type { IRosterEngine, PlayerData, EditableField, RatingField } from '../engine/RosterEngine';
+import type { IRosterEngine, PlayerData, EditableField, RatingField, TendencyField, GearField, SignatureField } from '../engine/RosterEngine';
 import { createEngine } from '../engine/createEngine';
 import { RadarChart } from './RadarChart';
 import { toast } from 'sonner';
@@ -26,6 +26,9 @@ import {
 import {
     Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription,
 } from '@/components/ui/sheet';
+import {
+    Tabs, TabsList, TabsTrigger, TabsContent,
+} from '@/components/ui/tabs';
 
 // ============================================================================
 // Constants & Types
@@ -474,8 +477,8 @@ export default function RosterDashboard() {
             {!engine && (
                 <div
                     className={`relative border-2 border-dashed rounded-2xl py-20 px-8 flex flex-col items-center justify-center text-center cursor-pointer transition-all duration-300 ${isDragging
-                            ? 'border-primary bg-primary/5 shadow-[0_0_40px_rgba(255,152,0,0.08)]'
-                            : 'border-border hover:border-primary/50 bg-gradient-to-br from-primary/5 to-transparent'
+                        ? 'border-primary bg-primary/5 shadow-[0_0_40px_rgba(255,152,0,0.08)]'
+                        : 'border-border hover:border-primary/50 bg-gradient-to-br from-primary/5 to-transparent'
                         }`}
                     onDragOver={handleDragOver}
                     onDragLeave={handleDragLeave}
@@ -764,54 +767,179 @@ export default function RosterDashboard() {
                             </SheetHeader>
 
                             <div className="p-6 space-y-6">
-                                {/* Radar Chart */}
-                                <div>
-                                    <h3 className="text-xs uppercase tracking-wider text-muted-foreground mb-3 flex items-center gap-2 after:content-[''] after:flex-1 after:h-px after:bg-border">
-                                        Attribute Visualization
-                                    </h3>
-                                    <RadarChart player={profilePlayer} />
-                                </div>
+                                <Tabs defaultValue="core">
+                                    <TabsList className="w-full">
+                                        <TabsTrigger value="core">Core</TabsTrigger>
+                                        <TabsTrigger value="tendencies">Tendencies</TabsTrigger>
+                                        <TabsTrigger value="gear">Gear & Sigs</TabsTrigger>
+                                    </TabsList>
 
-                                {/* Stat Cards */}
-                                <div className="grid grid-cols-2 gap-3">
-                                    <div className="bg-secondary border border-border rounded-xl p-4 text-center transition-all hover:-translate-y-0.5 hover:shadow-sm">
-                                        <div className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Overall</div>
-                                        <div className={`text-3xl font-black font-mono ${profilePlayer.overallRating >= 80 ? 'rating-text-high' : 'rating-text-med'}`}>
-                                            {profilePlayer.overallRating}
+                                    {/* ---- Tab: Core ---- */}
+                                    <TabsContent value="core" className="space-y-6 mt-4">
+                                        {/* Radar Chart */}
+                                        <div>
+                                            <h3 className="text-xs uppercase tracking-wider text-muted-foreground mb-3 flex items-center gap-2 after:content-[''] after:flex-1 after:h-px after:bg-border">
+                                                Attribute Visualization
+                                            </h3>
+                                            <RadarChart player={profilePlayer} />
                                         </div>
-                                    </div>
-                                    <div className="bg-secondary border border-border rounded-xl p-4 text-center transition-all hover:-translate-y-0.5 hover:shadow-sm">
-                                        <div className="text-xs font-medium text-muted-foreground uppercase tracking-wider">3-Point</div>
-                                        <div className="text-3xl font-black font-mono">
-                                            {profilePlayer.threePointRating}
-                                        </div>
-                                    </div>
-                                </div>
 
-                                {/* Detail Bars */}
-                                <div>
-                                    <h3 className="text-xs uppercase tracking-wider text-muted-foreground mb-3 flex items-center gap-2 after:content-[''] after:flex-1 after:h-px after:bg-border">
-                                        Core Ratings
-                                    </h3>
-                                    <div className="space-y-4">
+                                        {/* Stat Cards */}
+                                        <div className="grid grid-cols-2 gap-3">
+                                            <div className="bg-secondary border border-border rounded-xl p-4 text-center transition-all hover:-translate-y-0.5 hover:shadow-sm">
+                                                <div className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Overall</div>
+                                                <div className={`text-3xl font-black font-mono ${profilePlayer.overallRating >= 80 ? 'rating-text-high' : 'rating-text-med'}`}>
+                                                    {profilePlayer.overallRating}
+                                                </div>
+                                            </div>
+                                            <div className="bg-secondary border border-border rounded-xl p-4 text-center transition-all hover:-translate-y-0.5 hover:shadow-sm">
+                                                <div className="text-xs font-medium text-muted-foreground uppercase tracking-wider">3-Point</div>
+                                                <div className="text-3xl font-black font-mono">
+                                                    {profilePlayer.threePointRating}
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* Detail Bars */}
+                                        <div>
+                                            <h3 className="text-xs uppercase tracking-wider text-muted-foreground mb-3 flex items-center gap-2 after:content-[''] after:flex-1 after:h-px after:bg-border">
+                                                Core Ratings
+                                            </h3>
+                                            <div className="space-y-4">
+                                                {([
+                                                    ['Mid-Range', profilePlayer.midRangeRating],
+                                                    ['Dunk', profilePlayer.dunkRating],
+                                                    ['Speed', profilePlayer.speedRating],
+                                                ] as [string, number][]).map(([name, val]) => (
+                                                    <div key={name} className="grid grid-cols-[80px_1fr_36px] items-center gap-4">
+                                                        <span className="text-sm font-medium text-muted-foreground">{name}</span>
+                                                        <div className="h-1.5 bg-background rounded-full overflow-hidden">
+                                                            <div
+                                                                className="h-full bg-gradient-to-r from-primary to-primary/70 rounded-full transition-all duration-500"
+                                                                style={{ width: `${val}%` }}
+                                                            />
+                                                        </div>
+                                                        <span className="font-mono text-sm font-bold text-right">{val}</span>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    </TabsContent>
+
+                                    {/* ---- Tab: Tendencies ---- */}
+                                    <TabsContent value="tendencies" className="space-y-5 mt-4">
+                                        <h3 className="text-xs uppercase tracking-wider text-muted-foreground flex items-center gap-2 after:content-[''] after:flex-1 after:h-px after:bg-border">
+                                            Player Tendencies (0–100)
+                                        </h3>
                                         {([
-                                            ['Mid-Range', profilePlayer.midRangeRating],
-                                            ['Dunk', profilePlayer.dunkRating],
-                                            ['Speed', profilePlayer.speedRating],
-                                        ] as [string, number][]).map(([name, val]) => (
-                                            <div key={name} className="grid grid-cols-[80px_1fr_36px] items-center gap-4">
-                                                <span className="text-sm font-medium text-muted-foreground">{name}</span>
-                                                <div className="h-1.5 bg-background rounded-full overflow-hidden">
-                                                    <div
-                                                        className="h-full bg-gradient-to-r from-primary to-primary/70 rounded-full transition-all duration-500"
-                                                        style={{ width: `${val}%` }}
+                                            ['Stepback 3PT', 'tendencyStepbackShot3Pt'],
+                                            ['Driving Layup', 'tendencyDrivingLayup'],
+                                            ['Standing Dunk', 'tendencyStandingDunk'],
+                                            ['Driving Dunk', 'tendencyDrivingDunk'],
+                                            ['Post Hook', 'tendencyPostHook'],
+                                        ] as [string, TendencyField][]).map(([label, field]) => {
+                                            const rawVal = profilePlayer[field];
+                                            // Display raw 0-255 as percentage 0-100 for the slider
+                                            const displayVal = Math.round((rawVal / 255) * 100);
+                                            return (
+                                                <div key={field} className="space-y-1.5">
+                                                    <div className="flex justify-between items-center">
+                                                        <label className="text-sm font-medium">{label}</label>
+                                                        <span className="font-mono text-sm font-bold text-primary min-w-[36px] text-right">
+                                                            {displayVal}
+                                                        </span>
+                                                    </div>
+                                                    <Slider
+                                                        min={0}
+                                                        max={100}
+                                                        step={1}
+                                                        value={[displayVal]}
+                                                        onValueChange={(val) => {
+                                                            if (!engine) return;
+                                                            const newRaw = Math.round((val[0] / 100) * 255);
+                                                            engine.setTendency(profilePlayer.index, field, newRaw);
+                                                            const updated = engine.getPlayer(profilePlayer.index);
+                                                            setPlayers(prev => prev.map(p => p.index === profilePlayer.index ? updated : p));
+                                                        }}
                                                     />
                                                 </div>
-                                                <span className="font-mono text-sm font-bold text-right">{val}</span>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
+                                            );
+                                        })}
+                                        <p className="text-xs text-muted-foreground pt-2 border-t border-border">
+                                            Values are mapped from 0–255 (binary) to 0–100 (display). Add more tendencies by following the pattern in <code className="bg-muted px-1 rounded">RosterEditor.cpp</code>.
+                                        </p>
+                                    </TabsContent>
+
+                                    {/* ---- Tab: Gear & Signatures ---- */}
+                                    <TabsContent value="gear" className="space-y-6 mt-4">
+                                        {/* Gear Section */}
+                                        <div className="space-y-4">
+                                            <h3 className="text-xs uppercase tracking-wider text-muted-foreground flex items-center gap-2 after:content-[''] after:flex-1 after:h-px after:bg-border">
+                                                Gear & Accessories
+                                            </h3>
+                                            {([
+                                                ['Accessory Flag', 'gearAccessoryFlag', 1],
+                                                ['Elbow Pad', 'gearElbowPad', 7],
+                                                ['Wrist Band', 'gearWristBand', 7],
+                                                ['Headband', 'gearHeadband', 15],
+                                                ['Socks', 'gearSocks', 15],
+                                            ] as [string, GearField, number][]).map(([label, field, maxVal]) => (
+                                                <div key={field} className="grid grid-cols-[120px_1fr] items-center gap-3">
+                                                    <label className="text-sm font-medium text-muted-foreground">{label}</label>
+                                                    <Input
+                                                        type="number"
+                                                        min={0}
+                                                        max={maxVal}
+                                                        className="w-24 h-8 font-mono text-sm"
+                                                        value={profilePlayer[field]}
+                                                        onChange={(e) => {
+                                                            if (!engine) return;
+                                                            const val = Math.max(0, Math.min(maxVal, parseInt(e.target.value, 10) || 0));
+                                                            engine.setGear(profilePlayer.index, field, val);
+                                                            const updated = engine.getPlayer(profilePlayer.index);
+                                                            setPlayers(prev => prev.map(p => p.index === profilePlayer.index ? updated : p));
+                                                            toast.success(`Updated ${label}`);
+                                                        }}
+                                                    />
+                                                </div>
+                                            ))}
+                                        </div>
+
+                                        {/* Signature Animations Section */}
+                                        <div className="space-y-4">
+                                            <h3 className="text-xs uppercase tracking-wider text-muted-foreground flex items-center gap-2 after:content-[''] after:flex-1 after:h-px after:bg-border">
+                                                Signature Animations
+                                            </h3>
+                                            {([
+                                                ['Shot Form', 'sigShotForm'],
+                                                ['Shot Base', 'sigShotBase'],
+                                            ] as [string, SignatureField][]).map(([label, field]) => (
+                                                <div key={field} className="grid grid-cols-[120px_1fr] items-center gap-3">
+                                                    <label className="text-sm font-medium text-muted-foreground">{label}</label>
+                                                    <Input
+                                                        type="number"
+                                                        min={0}
+                                                        max={255}
+                                                        className="w-24 h-8 font-mono text-sm"
+                                                        value={profilePlayer[field]}
+                                                        onChange={(e) => {
+                                                            if (!engine) return;
+                                                            const val = Math.max(0, Math.min(255, parseInt(e.target.value, 10) || 0));
+                                                            engine.setSignature(profilePlayer.index, field, val);
+                                                            const updated = engine.getPlayer(profilePlayer.index);
+                                                            setPlayers(prev => prev.map(p => p.index === profilePlayer.index ? updated : p));
+                                                            toast.success(`Updated ${label}`);
+                                                        }}
+                                                    />
+                                                </div>
+                                            ))}
+                                        </div>
+
+                                        <p className="text-xs text-muted-foreground pt-2 border-t border-border">
+                                            Gear values are bit-packed (1–4 bits). Signature IDs are byte-aligned (0–255). Extend with more fields using the pattern in <code className="bg-muted px-1 rounded">RosterEditor.cpp</code>.
+                                        </p>
+                                    </TabsContent>
+                                </Tabs>
                             </div>
                         </>
                     )}

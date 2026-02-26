@@ -5,7 +5,7 @@
 // Uses Module._malloc / HEAPU8.set() for zero-copy file upload.
 // ============================================================================
 
-import type { IRosterEngine, PlayerData, RatingField } from './RosterEngine';
+import type { IRosterEngine, PlayerData, RatingField, TendencyField, GearField, SignatureField } from './RosterEngine';
 import { POSITION_NAMES } from './RosterEngine';
 import type { RosterEditorModule, WasmRosterEditor } from '../types/wasm';
 
@@ -16,6 +16,30 @@ const RATING_CPP_MAP: Record<RatingField, string> = {
     dunkRating: 'dunk_rating',
     speedRating: 'speed_rating',
     overallRating: 'overall_rating',
+};
+
+/** Tendency field → C++ getter/setter name suffix */
+const TENDENCY_CPP_MAP: Record<TendencyField, string> = {
+    tendencyStepbackShot3Pt: 'tendency_stepback_shot_3pt',
+    tendencyDrivingLayup: 'tendency_driving_layup',
+    tendencyStandingDunk: 'tendency_standing_dunk',
+    tendencyDrivingDunk: 'tendency_driving_dunk',
+    tendencyPostHook: 'tendency_post_hook',
+};
+
+/** Gear field → C++ getter/setter name suffix */
+const GEAR_CPP_MAP: Record<GearField, string> = {
+    gearAccessoryFlag: 'gear_accessory_flag',
+    gearElbowPad: 'gear_elbow_pad',
+    gearWristBand: 'gear_wrist_band',
+    gearHeadband: 'gear_headband',
+    gearSocks: 'gear_socks',
+};
+
+/** Signature field → C++ getter/setter name suffix */
+const SIG_CPP_MAP: Record<SignatureField, string> = {
+    sigShotForm: 'sig_shot_form',
+    sigShotBase: 'sig_shot_base',
 };
 
 export class WasmEngine implements IRosterEngine {
@@ -131,6 +155,21 @@ export class WasmEngine implements IRosterEngine {
                 speedRating: p.get_speed_rating(),
                 overallRating: p.get_overall_rating(),
                 position: POSITION_NAMES[p.get_position()] ?? `${p.get_position()}`,
+                // Tendencies
+                tendencyStepbackShot3Pt: p.get_tendency_stepback_shot_3pt(),
+                tendencyDrivingLayup: p.get_tendency_driving_layup(),
+                tendencyStandingDunk: p.get_tendency_standing_dunk(),
+                tendencyDrivingDunk: p.get_tendency_driving_dunk(),
+                tendencyPostHook: p.get_tendency_post_hook(),
+                // Gear
+                gearAccessoryFlag: p.get_gear_accessory_flag(),
+                gearElbowPad: p.get_gear_elbow_pad(),
+                gearWristBand: p.get_gear_wrist_band(),
+                gearHeadband: p.get_gear_headband(),
+                gearSocks: p.get_gear_socks(),
+                // Signatures
+                sigShotForm: p.get_sig_shot_form(),
+                sigShotBase: p.get_sig_shot_base(),
             };
         } finally {
             // Embind objects must be explicitly deleted to prevent leaks
@@ -151,6 +190,51 @@ export class WasmEngine implements IRosterEngine {
         const cppName = RATING_CPP_MAP[field];
         if (!cppName) return;
 
+        const p = this.editor.get_player(index);
+        try {
+            const setter = `set_${cppName}` as keyof typeof p;
+            const fn = p[setter];
+            if (typeof fn === 'function') {
+                (fn as (v: number) => void).call(p, value);
+            }
+        } finally {
+            (p as unknown as { delete: () => void }).delete();
+        }
+    }
+
+    setTendency(index: number, field: TendencyField, value: number): void {
+        const cppName = TENDENCY_CPP_MAP[field];
+        if (!cppName) return;
+        const p = this.editor.get_player(index);
+        try {
+            const setter = `set_${cppName}` as keyof typeof p;
+            const fn = p[setter];
+            if (typeof fn === 'function') {
+                (fn as (v: number) => void).call(p, value);
+            }
+        } finally {
+            (p as unknown as { delete: () => void }).delete();
+        }
+    }
+
+    setGear(index: number, field: GearField, value: number): void {
+        const cppName = GEAR_CPP_MAP[field];
+        if (!cppName) return;
+        const p = this.editor.get_player(index);
+        try {
+            const setter = `set_${cppName}` as keyof typeof p;
+            const fn = p[setter];
+            if (typeof fn === 'function') {
+                (fn as (v: number) => void).call(p, value);
+            }
+        } finally {
+            (p as unknown as { delete: () => void }).delete();
+        }
+    }
+
+    setSignature(index: number, field: SignatureField, value: number): void {
+        const cppName = SIG_CPP_MAP[field];
+        if (!cppName) return;
         const p = this.editor.get_player(index);
         try {
             const setter = `set_${cppName}` as keyof typeof p;

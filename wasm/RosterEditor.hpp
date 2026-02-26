@@ -44,6 +44,36 @@ public:
     // -- Position info -------------------------------------------------------
     int get_position() const;
 
+    // -- Tendencies (bit-packed, 8 bits each) --------------------------------
+    int  get_tendency_stepback_shot_3pt() const;
+    void set_tendency_stepback_shot_3pt(int val);
+    int  get_tendency_driving_layup() const;
+    void set_tendency_driving_layup(int val);
+    int  get_tendency_standing_dunk() const;
+    void set_tendency_standing_dunk(int val);
+    int  get_tendency_driving_dunk() const;
+    void set_tendency_driving_dunk(int val);
+    int  get_tendency_post_hook() const;
+    void set_tendency_post_hook(int val);
+
+    // -- Gear / Accessories (mixed bit-widths) -------------------------------
+    int  get_gear_accessory_flag() const;
+    void set_gear_accessory_flag(int val);
+    int  get_gear_elbow_pad() const;
+    void set_gear_elbow_pad(int val);
+    int  get_gear_wrist_band() const;
+    void set_gear_wrist_band(int val);
+    int  get_gear_headband() const;
+    void set_gear_headband(int val);
+    int  get_gear_socks() const;
+    void set_gear_socks(int val);
+
+    // -- Signature Animations (byte-aligned at known offset) -----------------
+    int  get_sig_shot_form() const;
+    void set_sig_shot_form(int val);
+    int  get_sig_shot_base() const;
+    void set_sig_shot_base(int val);
+
     // -- Record context ------------------------------------------------------
     size_t get_record_offset() const { return record_offset_; }
 
@@ -52,11 +82,15 @@ private:
     size_t   buffer_length_;
     size_t   record_offset_;   // Absolute byte offset of this player's record
 
-    // Helpers
+    // Helpers — byte-aligned
     uint8_t  read_byte_at(size_t offset) const;
     void     write_byte_at(size_t offset, uint8_t value);
     uint16_t read_u16_le(size_t offset) const;
     void     write_u16_le(size_t offset, uint16_t value);
+
+    // Helpers — bit-packed (uses BitStream internally)
+    uint32_t read_bits_at(size_t byte_off, int bit_off, int count) const;
+    void     write_bits_at(size_t byte_off, int bit_off, int count, uint32_t value);
 
     // Ratings conversion
     static int  raw_to_display(uint8_t raw);

@@ -29,6 +29,36 @@ interface Player {
     DOMString get_last_name();
 
     long get_position();
+
+    // Tendencies (bit-packed, 8 bits each)
+    long get_tendency_stepback_shot_3pt();
+    void set_tendency_stepback_shot_3pt(long val);
+    long get_tendency_driving_layup();
+    void set_tendency_driving_layup(long val);
+    long get_tendency_standing_dunk();
+    void set_tendency_standing_dunk(long val);
+    long get_tendency_driving_dunk();
+    void set_tendency_driving_dunk(long val);
+    long get_tendency_post_hook();
+    void set_tendency_post_hook(long val);
+
+    // Gear (mixed bit-widths)
+    long get_gear_accessory_flag();
+    void set_gear_accessory_flag(long val);
+    long get_gear_elbow_pad();
+    void set_gear_elbow_pad(long val);
+    long get_gear_wrist_band();
+    void set_gear_wrist_band(long val);
+    long get_gear_headband();
+    void set_gear_headband(long val);
+    long get_gear_socks();
+    void set_gear_socks(long val);
+
+    // Signatures (byte-aligned)
+    long get_sig_shot_form();
+    void set_sig_shot_form(long val);
+    long get_sig_shot_base();
+    void set_sig_shot_base(long val);
 };
 
 interface RosterEditor {

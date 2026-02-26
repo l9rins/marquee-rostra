@@ -26,6 +26,36 @@ export interface WasmPlayer {
 
   get_position(): number;
 
+  // -- Tendencies (bit-packed) --
+  get_tendency_stepback_shot_3pt(): number;
+  set_tendency_stepback_shot_3pt(val: number): void;
+  get_tendency_driving_layup(): number;
+  set_tendency_driving_layup(val: number): void;
+  get_tendency_standing_dunk(): number;
+  set_tendency_standing_dunk(val: number): void;
+  get_tendency_driving_dunk(): number;
+  set_tendency_driving_dunk(val: number): void;
+  get_tendency_post_hook(): number;
+  set_tendency_post_hook(val: number): void;
+
+  // -- Gear (mixed bit-widths) --
+  get_gear_accessory_flag(): number;
+  set_gear_accessory_flag(val: number): void;
+  get_gear_elbow_pad(): number;
+  set_gear_elbow_pad(val: number): void;
+  get_gear_wrist_band(): number;
+  set_gear_wrist_band(val: number): void;
+  get_gear_headband(): number;
+  set_gear_headband(val: number): void;
+  get_gear_socks(): number;
+  set_gear_socks(val: number): void;
+
+  // -- Signatures --
+  get_sig_shot_form(): number;
+  set_sig_shot_form(val: number): void;
+  get_sig_shot_base(): number;
+  set_sig_shot_base(val: number): void;
+
   /** Embind objects must be deleted to prevent memory leaks */
   delete(): void;
 }

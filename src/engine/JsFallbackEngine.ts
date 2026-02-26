@@ -5,7 +5,7 @@
 // Used as automatic fallback when the Wasm module is unavailable.
 // ============================================================================
 
-import type { IRosterEngine, PlayerData, RatingField } from './RosterEngine';
+import type { IRosterEngine, PlayerData, RatingField, TendencyField, GearField, SignatureField } from './RosterEngine';
 import { POSITION_NAMES } from './RosterEngine';
 
 // ---- CRC32 (IEEE 802.3, same polynomial as zlib) ---------------------------
@@ -59,6 +59,43 @@ const RATING_OFFSETS: Record<RatingField, number> = {
     dunkRating: 46,
     speedRating: 48,
     overallRating: 30,
+};
+
+// ---- Bit-packed field layout (mirroring C++ RosterEditor constants) ---------
+
+// Tendencies: base = record + 65 bytes + 6 bits, each 8 bits sequential
+const TENDENCY_BASE_BYTE = 65;
+const TENDENCY_BASE_BIT = 6;
+
+// Gear: base = record + 129 bytes + 7 bits
+const GEAR_BASE_BYTE = 129;
+const GEAR_BASE_BIT = 7;
+
+// Signatures: base = record + 193 bytes (byte-aligned)
+const SIG_BASE_BYTE = 193;
+
+/** Tendency field → index in the 69-tendency array */
+const TENDENCY_INDEX: Record<TendencyField, number> = {
+    tendencyStepbackShot3Pt: 0,
+    tendencyDrivingLayup: 1,
+    tendencyStandingDunk: 2,
+    tendencyDrivingDunk: 3,
+    tendencyPostHook: 4,
+};
+
+/** Gear field → { bitOffset: bits from GEAR_BASE, bitWidth } */
+const GEAR_LAYOUT: Record<GearField, { bitOffset: number; bitWidth: number }> = {
+    gearAccessoryFlag: { bitOffset: 0, bitWidth: 1 },
+    gearElbowPad: { bitOffset: 17, bitWidth: 3 },    // 1 + 16 skip
+    gearWristBand: { bitOffset: 20, bitWidth: 3 },    // 17 + 3
+    gearHeadband: { bitOffset: 23, bitWidth: 4 },    // 20 + 3
+    gearSocks: { bitOffset: 65, bitWidth: 4 },    // sum of all preceding
+};
+
+/** Signature field → byte offset from SIG_BASE */
+const SIG_OFFSET: Record<SignatureField, number> = {
+    sigShotForm: 1,   // 2nd byte (after SigFT)
+    sigShotBase: 2,   // 3rd byte
 };
 
 function rawToDisplay(raw: number): number {
@@ -202,6 +239,21 @@ export class JsFallbackEngine implements IRosterEngine {
             speedRating: rawToDisplay(this.buffer[base + RATING_OFFSETS.speedRating] ?? 0),
             overallRating: rawToDisplay(this.buffer[base + RATING_OFFSETS.overallRating] ?? 0),
             position: POSITION_NAMES[posRaw] ?? `${posRaw}`,
+            // Tendencies
+            tendencyStepbackShot3Pt: this.readTendencyAt(base, 0),
+            tendencyDrivingLayup: this.readTendencyAt(base, 1),
+            tendencyStandingDunk: this.readTendencyAt(base, 2),
+            tendencyDrivingDunk: this.readTendencyAt(base, 3),
+            tendencyPostHook: this.readTendencyAt(base, 4),
+            // Gear
+            gearAccessoryFlag: this.readGearAt(base, 'gearAccessoryFlag'),
+            gearElbowPad: this.readGearAt(base, 'gearElbowPad'),
+            gearWristBand: this.readGearAt(base, 'gearWristBand'),
+            gearHeadband: this.readGearAt(base, 'gearHeadband'),
+            gearSocks: this.readGearAt(base, 'gearSocks'),
+            // Signatures
+            sigShotForm: this.buffer[base + SIG_BASE_BYTE + 1] ?? 0,
+            sigShotBase: this.buffer[base + SIG_BASE_BYTE + 2] ?? 0,
         };
     }
 
@@ -217,6 +269,94 @@ export class JsFallbackEngine implements IRosterEngine {
         if (abs < this.buffer.length) {
             this.buffer[abs] = displayToRaw(value);
         }
+    }
+
+    setTendency(index: number, field: TendencyField, value: number): void {
+        const tendIdx = TENDENCY_INDEX[field];
+        if (tendIdx === undefined) return;
+        const base = this.playerTableOffset + index * DEFAULT_RECORD_SIZE;
+        this.writeTendencyAt(base, tendIdx, value);
+    }
+
+    setGear(index: number, field: GearField, value: number): void {
+        const layout = GEAR_LAYOUT[field];
+        if (!layout) return;
+        const base = this.playerTableOffset + index * DEFAULT_RECORD_SIZE;
+        this.writeGearAt(base, field, value);
+    }
+
+    setSignature(index: number, field: SignatureField, value: number): void {
+        const offset = SIG_OFFSET[field];
+        if (offset === undefined) return;
+        const abs = this.playerTableOffset + index * DEFAULT_RECORD_SIZE + SIG_BASE_BYTE + offset;
+        if (abs < this.buffer.length) {
+            this.buffer[abs] = value & 0xFF;
+        }
+    }
+
+    // -- Bit-level helpers (JS equivalent of C++ BitStream) --------------------
+
+    private readBitsAt(absBase: number, byteOff: number, bitOff: number, count: number): number {
+        let bytePos = absBase + byteOff;
+        let bitPos = bitOff;
+        let result = 0;
+        for (let i = 0; i < count; i++) {
+            if (bytePos >= this.buffer.length) return result;
+            const bitIndex = 7 - bitPos;
+            const bit = (this.buffer[bytePos] >> bitIndex) & 1;
+            result = (result << 1) | bit;
+            bitPos++;
+            if (bitPos >= 8) { bitPos = 0; bytePos++; }
+        }
+        return result;
+    }
+
+    private writeBitsAt(absBase: number, byteOff: number, bitOff: number, count: number, value: number): void {
+        let bytePos = absBase + byteOff;
+        let bitPos = bitOff;
+        for (let i = count - 1; i >= 0; i--) {
+            if (bytePos >= this.buffer.length) return;
+            const bit = (value >> i) & 1;
+            const bitIndex = 7 - bitPos;
+            if (bit) {
+                this.buffer[bytePos] |= (1 << bitIndex);
+            } else {
+                this.buffer[bytePos] &= ~(1 << bitIndex);
+            }
+            bitPos++;
+            if (bitPos >= 8) { bitPos = 0; bytePos++; }
+        }
+    }
+
+    private readTendencyAt(recordBase: number, tendencyIndex: number): number {
+        const totalBits = TENDENCY_BASE_BYTE * 8 + TENDENCY_BASE_BIT + tendencyIndex * 8;
+        const byteOff = Math.floor(totalBits / 8);
+        const bitOff = totalBits % 8;
+        return this.readBitsAt(recordBase, byteOff, bitOff, 8);
+    }
+
+    private writeTendencyAt(recordBase: number, tendencyIndex: number, value: number): void {
+        const totalBits = TENDENCY_BASE_BYTE * 8 + TENDENCY_BASE_BIT + tendencyIndex * 8;
+        const byteOff = Math.floor(totalBits / 8);
+        const bitOff = totalBits % 8;
+        this.writeBitsAt(recordBase, byteOff, bitOff, 8, value & 0xFF);
+    }
+
+    private readGearAt(recordBase: number, field: GearField): number {
+        const layout = GEAR_LAYOUT[field];
+        const totalBits = GEAR_BASE_BYTE * 8 + GEAR_BASE_BIT + layout.bitOffset;
+        const byteOff = Math.floor(totalBits / 8);
+        const bitOff = totalBits % 8;
+        return this.readBitsAt(recordBase, byteOff, bitOff, layout.bitWidth);
+    }
+
+    private writeGearAt(recordBase: number, field: GearField, value: number): void {
+        const layout = GEAR_LAYOUT[field];
+        const totalBits = GEAR_BASE_BYTE * 8 + GEAR_BASE_BIT + layout.bitOffset;
+        const byteOff = Math.floor(totalBits / 8);
+        const bitOff = totalBits % 8;
+        const mask = (1 << layout.bitWidth) - 1;
+        this.writeBitsAt(recordBase, byteOff, bitOff, layout.bitWidth, value & mask);
     }
 
     saveAndRecalculateChecksum(): Uint8Array {

@@ -238,6 +238,234 @@ int Player::get_position() const {
     return static_cast<int>(read_byte_at(POSITION_OFFSET));
 }
 
+// -- Bit-packed helpers -------------------------------------------------------
+// These create a temporary BitStream over the entire buffer, jump to the
+// player's record_offset_ + the specified (byte, bit) delta, then read/write
+// the requested number of bits. This mirrors the C# pattern:
+//   brOpen.MoveStreamToPortraitID(i);      // → record_offset_
+//   brOpen.MoveStreamPosition(byte, bit);  // → jump_to + delta
+//   brOpen.ReadNBAByte(N);                 // → read_bits(N)
+
+uint32_t Player::read_bits_at(size_t byte_off, int bit_off, int count) const {
+    // const_cast is safe: BitStream won't write in read_bits()
+    BitStream bs(const_cast<uint8_t*>(buffer_), buffer_length_);
+    bs.jump_to(record_offset_);
+    bs.move(static_cast<int>(byte_off), bit_off);
+    return bs.read_bits(count);
+}
+
+void Player::write_bits_at(size_t byte_off, int bit_off, int count, uint32_t value) {
+    BitStream bs(buffer_, buffer_length_);
+    bs.jump_to(record_offset_);
+    bs.move(static_cast<int>(byte_off), bit_off);
+    bs.write_bits(value, count);
+}
+
+// ============================================================================
+// Tendencies — 8 bits each, sequential from (FirstSS + 51 bytes, 3 bits)
+// ============================================================================
+// Leftos' PlayerReader.cs: MoveStreamToFirstSS → MoveStreamPosition(51, 3)
+// FirstSS anchor = PortraitID + 14 bytes + 3 bits (i.e., record_offset_ + 14,3)
+// So absolute = record_offset_ + (14+51) bytes + (3+3) bits
+//             = record_offset_ + 65 bytes + 6 bits
+// Each tendency is 8 bits read sequentially.
+// Tendency index N starts at (65, 6) + N * 8 bits.
+// ============================================================================
+
+static constexpr size_t TENDENCY_BASE_BYTE = 65;  // 14 + 51
+static constexpr int    TENDENCY_BASE_BIT  = 6;   // 3 + 3
+
+// Helper to compute the (byte, bit) offset for tendency at index i
+static inline void tendency_offset(int index, size_t& byte_off, int& bit_off) {
+    long long total_bits = static_cast<long long>(TENDENCY_BASE_BYTE) * 8
+                         + TENDENCY_BASE_BIT
+                         + static_cast<long long>(index) * 8;
+    byte_off = static_cast<size_t>(total_bits / 8);
+    bit_off  = static_cast<int>(total_bits % 8);
+}
+
+// Tendency indices in the 69-tendency array (based on community research):
+//  0 = StepBackShot3Pt, 1 = DrivingLayup, 2 = StandingDunk,
+//  3 = DrivingDunk, 4 = PostHook, ...
+// (The exact mapping depends on the game version; these are representative.)
+
+int Player::get_tendency_stepback_shot_3pt() const {
+    size_t bo; int bi; tendency_offset(0, bo, bi);
+    return static_cast<int>(read_bits_at(bo, bi, 8));
+}
+void Player::set_tendency_stepback_shot_3pt(int val) {
+    size_t bo; int bi; tendency_offset(0, bo, bi);
+    write_bits_at(bo, bi, 8, static_cast<uint32_t>(val & 0xFF));
+}
+
+int Player::get_tendency_driving_layup() const {
+    size_t bo; int bi; tendency_offset(1, bo, bi);
+    return static_cast<int>(read_bits_at(bo, bi, 8));
+}
+void Player::set_tendency_driving_layup(int val) {
+    size_t bo; int bi; tendency_offset(1, bo, bi);
+    write_bits_at(bo, bi, 8, static_cast<uint32_t>(val & 0xFF));
+}
+
+int Player::get_tendency_standing_dunk() const {
+    size_t bo; int bi; tendency_offset(2, bo, bi);
+    return static_cast<int>(read_bits_at(bo, bi, 8));
+}
+void Player::set_tendency_standing_dunk(int val) {
+    size_t bo; int bi; tendency_offset(2, bo, bi);
+    write_bits_at(bo, bi, 8, static_cast<uint32_t>(val & 0xFF));
+}
+
+int Player::get_tendency_driving_dunk() const {
+    size_t bo; int bi; tendency_offset(3, bo, bi);
+    return static_cast<int>(read_bits_at(bo, bi, 8));
+}
+void Player::set_tendency_driving_dunk(int val) {
+    size_t bo; int bi; tendency_offset(3, bo, bi);
+    write_bits_at(bo, bi, 8, static_cast<uint32_t>(val & 0xFF));
+}
+
+int Player::get_tendency_post_hook() const {
+    size_t bo; int bi; tendency_offset(4, bo, bi);
+    return static_cast<int>(read_bits_at(bo, bi, 8));
+}
+void Player::set_tendency_post_hook(int val) {
+    size_t bo; int bi; tendency_offset(4, bo, bi);
+    write_bits_at(bo, bi, 8, static_cast<uint32_t>(val & 0xFF));
+}
+
+// ============================================================================
+// Gear — mixed bit-widths from PortraitID + (129, 7)
+// ============================================================================
+// Leftos' ReadGear: MoveStreamToPortraitID(i) → MoveStreamPosition(129, 7)
+// The gear fields are read sequentially with varying bit widths:
+//   gear[0] = 1 bit  (accessory flag)
+//   skip 2 bytes 0 bits
+//   gear[1] = 3 bits (elbow pad)
+//   gear[2] = 3 bits (wrist band)
+//   gear[3] = 4 bits (headband)
+//   skip 1 byte 0 bits
+//   gear[4] = 2 bits
+//   gear[5] = 1 bit
+//   skip 0 bytes 1 bit
+//   gear[6] = 4 bits
+//   gear[7] = 3 bits
+//   gear[8] = 3 bits
+//   skip 0 bytes 1 bit
+//   gear[9] = 3 bits
+//   skip 0 bytes 1 bit
+//   gear[10] = 3 bits
+//   gear[11] = 3 bits
+//   gear[12] = 3 bits
+//   gear[13] = 2 bits
+//   gear[14] = 4 bits (socks)
+// We implement gear[0], gear[1], gear[2], gear[3], and gear[14] (socks).
+// ============================================================================
+
+static constexpr size_t GEAR_BASE_BYTE = 129;
+static constexpr int    GEAR_BASE_BIT  = 7;
+
+// gear[0]: 1 bit at base
+int Player::get_gear_accessory_flag() const {
+    return static_cast<int>(read_bits_at(GEAR_BASE_BYTE, GEAR_BASE_BIT, 1));
+}
+void Player::set_gear_accessory_flag(int val) {
+    write_bits_at(GEAR_BASE_BYTE, GEAR_BASE_BIT, 1, static_cast<uint32_t>(val & 0x1));
+}
+
+// gear[1]: 3 bits at base + 1 bit + skip(2 bytes, 0 bits) = base + 17 bits
+// Total from base: 1 bit (gear[0]) + 16 bits (2 byte skip) = 17 bits
+static inline void gear1_offset(size_t& bo, int& bi) {
+    long long total = static_cast<long long>(GEAR_BASE_BYTE) * 8 + GEAR_BASE_BIT + 17;
+    bo = static_cast<size_t>(total / 8);
+    bi = static_cast<int>(total % 8);
+}
+
+int Player::get_gear_elbow_pad() const {
+    size_t bo; int bi; gear1_offset(bo, bi);
+    return static_cast<int>(read_bits_at(bo, bi, 3));
+}
+void Player::set_gear_elbow_pad(int val) {
+    size_t bo; int bi; gear1_offset(bo, bi);
+    write_bits_at(bo, bi, 3, static_cast<uint32_t>(val & 0x7));
+}
+
+// gear[2]: 3 bits immediately after gear[1]
+static inline void gear2_offset(size_t& bo, int& bi) {
+    long long total = static_cast<long long>(GEAR_BASE_BYTE) * 8 + GEAR_BASE_BIT + 17 + 3;
+    bo = static_cast<size_t>(total / 8);
+    bi = static_cast<int>(total % 8);
+}
+
+int Player::get_gear_wrist_band() const {
+    size_t bo; int bi; gear2_offset(bo, bi);
+    return static_cast<int>(read_bits_at(bo, bi, 3));
+}
+void Player::set_gear_wrist_band(int val) {
+    size_t bo; int bi; gear2_offset(bo, bi);
+    write_bits_at(bo, bi, 3, static_cast<uint32_t>(val & 0x7));
+}
+
+// gear[3]: 4 bits immediately after gear[2]
+static inline void gear3_offset(size_t& bo, int& bi) {
+    long long total = static_cast<long long>(GEAR_BASE_BYTE) * 8 + GEAR_BASE_BIT + 17 + 3 + 3;
+    bo = static_cast<size_t>(total / 8);
+    bi = static_cast<int>(total % 8);
+}
+
+int Player::get_gear_headband() const {
+    size_t bo; int bi; gear3_offset(bo, bi);
+    return static_cast<int>(read_bits_at(bo, bi, 4));
+}
+void Player::set_gear_headband(int val) {
+    size_t bo; int bi; gear3_offset(bo, bi);
+    write_bits_at(bo, bi, 4, static_cast<uint32_t>(val & 0xF));
+}
+
+// gear[14] (socks): 4 bits. To compute the offset we sum all preceding widths + skips:
+//   gear[0]=1, skip=16, gear[1]=3, gear[2]=3, gear[3]=4, skip=8,
+//   gear[4]=2, gear[5]=1, skip=1, gear[6]=4, gear[7]=3, gear[8]=3,
+//   skip=1, gear[9]=3, skip=1, gear[10]=3, gear[11]=3, gear[12]=3, gear[13]=2
+//   Total bits before gear[14]: 1+16+3+3+4+8+2+1+1+4+3+3+1+3+1+3+3+3+2 = 65
+static inline void gear_socks_offset(size_t& bo, int& bi) {
+    long long total = static_cast<long long>(GEAR_BASE_BYTE) * 8 + GEAR_BASE_BIT + 65;
+    bo = static_cast<size_t>(total / 8);
+    bi = static_cast<int>(total % 8);
+}
+
+int Player::get_gear_socks() const {
+    size_t bo; int bi; gear_socks_offset(bo, bi);
+    return static_cast<int>(read_bits_at(bo, bi, 4));
+}
+void Player::set_gear_socks(int val) {
+    size_t bo; int bi; gear_socks_offset(bo, bi);
+    write_bits_at(bo, bi, 4, static_cast<uint32_t>(val & 0xF));
+}
+
+// ============================================================================
+// Signature Animations — byte-aligned at PortraitID + (193, 0)
+// ============================================================================
+// Leftos: MoveStreamToPortraitID → MoveStreamPosition(193, 0)
+// SigFT = byte, SigShtForm = byte, SigShtBase = byte (sequential)
+
+static constexpr size_t SIG_BASE_BYTE = 193;
+
+// SigShtForm is the 2nd byte at offset 193 (after SigFT)
+int Player::get_sig_shot_form() const {
+    return static_cast<int>(read_bits_at(SIG_BASE_BYTE + 1, 0, 8));
+}
+void Player::set_sig_shot_form(int val) {
+    write_bits_at(SIG_BASE_BYTE + 1, 0, 8, static_cast<uint32_t>(val & 0xFF));
+}
+
+// SigShtBase is the 3rd byte at offset 193 (after SigFT + SigShtForm)
+int Player::get_sig_shot_base() const {
+    return static_cast<int>(read_bits_at(SIG_BASE_BYTE + 2, 0, 8));
+}
+void Player::set_sig_shot_base(int val) {
+    write_bits_at(SIG_BASE_BYTE + 2, 0, 8, static_cast<uint32_t>(val & 0xFF));
+}
+
 // ============================================================================
 // RosterEditor Implementation
 // ============================================================================
