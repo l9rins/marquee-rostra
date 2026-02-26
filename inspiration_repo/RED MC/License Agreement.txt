@@ -1,0 +1,21 @@
+LICENSE AGREEMENT
+
+This Software License Agreement (this "Agreement") is between you (either an individual or an entity, referred to hereinafter as "you" or "your") and Vl@d Zola Jr. (Vladislav Durmanenko) ("the author") for the RED Modding Center version 5.0 software ("the Software") that accompanies this Agreement.
+Do not use the Software until you have carefully read the following Agreement.
+
+By installing, copying, or otherwise using the product, you agree to be bound by the terms of this Agreement.
+If you do NOT AGREE to the terms of this Agreement, do not install and do not use the Software.
+
+The software is provided "As-Is", so there is no guarantee, that it is bug-free, and the author isn't responsible for any harm, which may be caused to you or any 3rd party as a result of using the software. You agree to use the Software at your own risk.
+
+RED Modding Center version 5.0 is a free software. You are allowed to use any funtions of the Software without paying a fee for as long as you wish.
+
+You are PROHIBITED to disassemble, decompile the Software or try to change its parts in any other way.
+You are PROHIBITED to upload, sell, redistribute or use as a part of another project/software the Software or any of its parts without the author's written permission.
+
+In any case of this license agreement being violated by you, the author resolves the rights to annul your license and to require any sum up to 100,000 U.S. Dollars from you as a compensation.
+
+The contents of this Agreement may change from one Software version to another without your prior notification.
+
+All rigths reserved.
+Copyright © 2013-2018 Vl@d Zola Jr. (Vladislav Durmanenko)

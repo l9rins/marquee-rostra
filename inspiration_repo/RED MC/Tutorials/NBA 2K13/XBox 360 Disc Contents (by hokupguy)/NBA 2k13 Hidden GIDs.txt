@@ -1,0 +1,99 @@
+team   				GID #
+
+d-league teams
+
+14ers Colorado			50
+66ers	Tulsa			51
+Armor	Springfield		52
+BayHawks	Erie		53
+Bighorns	Reno		54
+D-Fenders	LA		55
+Energy	Iowa	Iowa		56
+Flash	Utah			57
+Jam	Bakersfield		58
+Mad Ants	Fort Wayne	59
+Red Claws	Maine		60
+Skyforce	Sioux Falls	61
+Stampede	Idaho		62
+Thunderbirds	Albuquerque	63
+Toros	Austin			64
+Vipers	Rio Grande Valley	65
+Wizards	Dakota			66
+Legends	Texas			67
+
+Summer League teams
+
+76ers	Philadelphia		100
+Bucks	Milwaukee		101
+Wizards	Washington		102
+Bulls	Chicago			103
+Cavaliers	Cleveland	104
+Celtics	Boston			105
+Clippers	Los Angeles	106
+Grizzlies	Memphis		108
+Hawks	Atlanta			109
+Heat	Miami			110
+Hornets	New Orleans		111
+Jazz	Utah			112
+Kings	Sacramento		113
+Knicks	New York		114
+Lakers	Los Angeles		115
+Magic	Orlando			116
+Mavericks	Dallas		117
+Nets	New Jersey		118
+Nuggets	Denver			119
+Pacers	Indiana			120
+Pistons	Detroit			121
+Raptors	Toronto			122
+Rockets	Houston			123
+Thunder	Oklahoma City		124
+Spurs	San Antonio		125
+Suns	Phoenix			126
+Timberwolves	Minnesota	127
+Trail Blazers	Portland	128
+Warriors	Golden State	129
+Bobcats	Charlotte		131
+
+decade teams
+
+50s/60s	LEG			300
+70s East			301
+70s West			302
+80s East			303
+80s West			304
+90s East			305
+90s West			306
+
+2k teams
+
+NBA 2K				500
+VC				502
+International			503
+2K China			512
+
+Draft Classes teams
+
+Class of '00			520
+Class of '01			521
+Class of '02			522
+Class of '03			523
+Class of '04			524
+Class of '05			525
+Class of '06			526
+Class of '07			527
+
+2k11 Jordan Classic Teams
+
+Hawks	Atlanta	90		554
+Pistons	Detroit	90		556	
+Trail Blazers	Portland 92	558	
+Bulls	Chicago	95		559 
+Bulls	Chicago	97		563	
+Jazz	Utah	97		564	
+
+
+
+
+
+
+

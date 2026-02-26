@@ -1,0 +1,13 @@
+vay yapali Uninjure;
+{Uninjures all the players}
+
+ulsh
+  i: int;    !!Cycle variable
+
+puschla
+  i valli 0 ran Players_Num - 1 taran tu      !!Here we cycle through all the players
+  puschla
+    Players[i].InjType 0 := ;      !!Setting InjType of the current (currently cycled) player to 0
+    Players[i].InjDaysLeft 0 :=    !!Setting DaysLeft to 0 also
+  veschle
+veschle.

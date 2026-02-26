@@ -1,0 +1,30 @@
+Names:4;General Parameters:6;Appearance:5;Additional Parameters:7
+FullName;Full Name;Defines arena’s full name. It is shown at match startups and in most other situations
+ShortName;Short Name;Defines arena’s short name. It is used, when selecting an Arena in Match Options -> Select Arena
+#
+__FullName;FullName Replacer;Set to zero to use the value, stored in FullName, as Arena's Full Name. Otherwise the actual arena's full name is grabbed from the *current_language*.IFF file, using the value as a string ID.
+__ShrtName;ShortName Replacer;Set to zero to use the value, stored in ShortName, as Arena's Short Name. Otherwise the actual arena's short name is grabbed from the *current_language*.IFF file, using the value as a string ID.
+AType;Arena Type;Defines Arena Type
+#
+IsPractGym;Is Practice Gym;Defines, if the arena is supposed to be a practice gym
+IsSpecial;Is Special;Defines, if the arena is special
+RuckerType;Rucker Park Type;Defines, if the arena is a version of the Rucker Park court
+ShdwMode;Shadow Mode;Shadow Mode, used by the arena
+#
+AudioID;Audio ID;Arena's Audio ID
+Model3D;3D Model;A name of an IFF-file, where the arena’s 3D Model and some other parameters are stored
+#
+FloorID;Floor ID;ID of a floor, used by the Arena (deprecated, use FloorName instead)
+FloorName;Floor Name;An IFF-file name, where the floor, used by the arena, is stored
+#
+LED;LED;This field stands for the arena’s LED file
+Ads;Advertisments;This field defines an IFF file, where the arena's adverts are stored
+City;City;This field stands for the city, the arena is located in
+CityAbbr;City Abbreviation;This field stands for the city abbreviation, the arena is located in
+SomeName;Some Name;This field stands for some arena’s name. All arenas have an empty name here, except for LAC and LAL.
+StAbbr;State Abbreviation;This field stands for the state abbreviation, the arena is located in
+#
+HomBnchPos;Home Bench Position;Home Bench/First Quarter Goal side, on Broadcast camera
+PracMenCam;Practice Mode Menu Cameras;"Blacktop" Cameras during Pause Menu, only for Practice Mode? Doesn't affect BT Mode or Gameplay Modes
+#
+Capacity;Capacity;Arena’s capacity. Purposes of this value are not known, but setting it to 0 will give you empty stands, other values have no effect

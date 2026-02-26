@@ -1,102 +1,63 @@
 // ============================================================================
-// JsFallbackEngine.ts — Pure-JS roster engine (mirrors C++ logic)
+// JsFallbackEngine.ts — Pure-JS .ROS parser (no Wasm/Emscripten required)
 // ============================================================================
-// This engine works without Emscripten / Wasm compilation.
-// Used as automatic fallback when the Wasm module is unavailable.
+// This mirrors the logic in RosterEditor.cpp but runs entirely in JavaScript.
+// Used as a fallback when Wasm fails to load.
 // ============================================================================
 
 import type { IRosterEngine, PlayerData, RatingField, TendencyField, GearField, SignatureField } from './RosterEngine';
-import { POSITION_NAMES } from './RosterEngine';
+import { POSITION_NAMES, RATING_DEFS, TENDENCY_DEFS } from './RosterEngine';
 
-// ---- CRC32 (IEEE 802.3, same polynomial as zlib) ---------------------------
-
-function makeCRC32Table(): Uint32Array {
-    const table = new Uint32Array(256);
-    for (let n = 0; n < 256; n++) {
-        let c = n;
-        for (let k = 0; k < 8; k++) {
-            c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1);
-        }
-        table[n] = c >>> 0;
-    }
-    return table;
-}
-
-const CRC32_TABLE = makeCRC32Table();
-
-function crc32(data: Uint8Array, offset: number, length: number): number {
-    let crc = 0xFFFFFFFF;
-    const end = offset + length;
-    for (let i = offset; i < end; i++) {
-        crc = CRC32_TABLE[(crc ^ data[i]) & 0xFF] ^ (crc >>> 8);
-    }
-    return (crc ^ 0xFFFFFFFF) >>> 0;
-}
-
-function bswap32(value: number): number {
-    return (
-        ((value >> 24) & 0xFF) |
-        ((value >> 8) & 0xFF00) |
-        ((value << 8) & 0xFF0000) |
-        ((value << 24) & 0xFF000000)
-    ) >>> 0;
-}
-
-// ---- Player record layout (mirroring RosterEditor.cpp) ---------------------
+// ============================================================================
+// Constants — must match RosterEditor.cpp
+// ============================================================================
 
 const TEAM_TABLE_MARKER = 0x2850EC;
 const CFID_OFFSET = 28;
 const FIRST_NAME_OFFSET = 52;
 const LAST_NAME_OFFSET = 56;
-const POSITION_OFFSET = 60;
-const DEFAULT_RECORD_SIZE = 128;
-const MAX_PLAYERS = 1500;
+const POSITION_OFFSET = 73;
+const DEFAULT_RECORD_SIZE = 477;
 
-/** Rating field → byte offset within a player record */
-const RATING_OFFSETS: Record<RatingField, number> = {
-    threePointRating: 44,
-    midRangeRating: 45,
-    dunkRating: 46,
-    speedRating: 48,
-    overallRating: 30,
-};
+// Rating byte offsets — must exactly match RATING_OFFSETS[] in RosterEditor.cpp
+const RATING_OFFSETS = [
+    30, 31, 32, 45, 44, 33, 46, 34, 35, 36,    // 0-9
+    37, 38, 39, 40, 41, 42, 43, 47, 49, 50,    // 10-19
+    51, 52, 53, 54, 55, 56, 57, 58, 59, 60,    // 20-29
+    61, 62, 63, 64, 65, 48, 66, 67, 68, 69,    // 30-39
+    70, 71, 72,                                  // 40-42
+];
 
-// ---- Bit-packed field layout (mirroring C++ RosterEditor constants) ---------
-
-// Tendencies: base = record + 65 bytes + 6 bits, each 8 bits sequential
+// Tendency bit-packed layout
 const TENDENCY_BASE_BYTE = 65;
 const TENDENCY_BASE_BIT = 6;
 
-// Gear: base = record + 129 bytes + 7 bits
+// Gear layout
 const GEAR_BASE_BYTE = 129;
 const GEAR_BASE_BIT = 7;
 
-// Signatures: base = record + 193 bytes (byte-aligned)
-const SIG_BASE_BYTE = 193;
-
-/** Tendency field → index in the 69-tendency array */
-const TENDENCY_INDEX: Record<TendencyField, number> = {
-    tendencyStepbackShot3Pt: 0,
-    tendencyDrivingLayup: 1,
-    tendencyStandingDunk: 2,
-    tendencyDrivingDunk: 3,
-    tendencyPostHook: 4,
-};
-
-/** Gear field → { bitOffset: bits from GEAR_BASE, bitWidth } */
 const GEAR_LAYOUT: Record<GearField, { bitOffset: number; bitWidth: number }> = {
     gearAccessoryFlag: { bitOffset: 0, bitWidth: 1 },
-    gearElbowPad: { bitOffset: 17, bitWidth: 3 },    // 1 + 16 skip
-    gearWristBand: { bitOffset: 20, bitWidth: 3 },    // 17 + 3
-    gearHeadband: { bitOffset: 23, bitWidth: 4 },    // 20 + 3
-    gearSocks: { bitOffset: 65, bitWidth: 4 },    // sum of all preceding
+    gearElbowPad: { bitOffset: 17, bitWidth: 3 },
+    gearWristBand: { bitOffset: 20, bitWidth: 3 },
+    gearHeadband: { bitOffset: 23, bitWidth: 4 },
+    gearSocks: { bitOffset: 65, bitWidth: 4 },
 };
 
-/** Signature field → byte offset from SIG_BASE */
-const SIG_OFFSET: Record<SignatureField, number> = {
-    sigShotForm: 1,   // 2nd byte (after SigFT)
-    sigShotBase: 2,   // 3rd byte
-};
+// Signatures
+const SIG_BASE_BYTE = 193;
+const SIG_OFFSET: Record<SignatureField, number> = { sigShotForm: 1, sigShotBase: 2 };
+
+// Sig skills: 5 × 6 bits at record + 14 bytes + 3 bits
+const SIG_SKILL_BASE_BYTE = 14;
+const SIG_SKILL_BASE_BIT = 3;
+
+// Hot zones: 14 × 2 bits after tendencies
+const HOT_ZONE_BASE_BITS = TENDENCY_BASE_BYTE * 8 + TENDENCY_BASE_BIT + 58 * 8;
+
+// ============================================================================
+// Conversion helpers
+// ============================================================================
 
 function rawToDisplay(raw: number): number {
     return Math.floor(raw / 3) + 25;
@@ -135,238 +96,261 @@ export class JsFallbackEngine implements IRosterEngine {
         this.buffer[offset + 1] = (value >> 8) & 0xFF;
     }
 
-    private readU32LE(offset: number): number {
-        if (offset + 3 >= this.buffer.length) return 0;
-        return (
-            this.buffer[offset] |
-            (this.buffer[offset + 1] << 8) |
-            (this.buffer[offset + 2] << 16) |
-            (this.buffer[offset + 3] << 24)
-        ) >>> 0;
-    }
-
-    private readStringAt(ptr: number, maxLen = 64): string {
-        if (ptr === 0 || ptr >= this.buffer.length) return '';
-        let str = '';
-        for (let i = ptr; i < Math.min(ptr + maxLen, this.buffer.length); i++) {
-            if (this.buffer[i] === 0) break;
-            const ch = this.buffer[i];
-            if (ch < 32 || ch > 126) break;
-            str += String.fromCharCode(ch);
+    private readBitsAt(absBase: number, byteOff: number, bitOff: number, count: number): number {
+        let pos = absBase + byteOff;
+        let bitPos = bitOff;
+        let result = 0;
+        for (let i = 0; i < count; i++) {
+            if (pos >= this.buffer.length) break;
+            const bit = (this.buffer[pos] >> (7 - bitPos)) & 1;
+            result = (result << 1) | bit;
+            bitPos++;
+            if (bitPos >= 8) { bitPos = 0; pos++; }
         }
-        return str;
+        return result;
     }
 
-    private readName(absOffset: number, fallback: string): string {
-        if (absOffset + 3 >= this.buffer.length) return fallback;
-        const ptr = this.readU32LE(absOffset);
-        if (ptr > 0 && ptr < this.buffer.length) {
-            const name = this.readStringAt(ptr);
-            if (name) return name;
+    private writeBitsAt(absBase: number, byteOff: number, bitOff: number, count: number, value: number): void {
+        let pos = absBase + byteOff;
+        let bitPos = bitOff;
+        for (let i = count - 1; i >= 0; i--) {
+            if (pos >= this.buffer.length) break;
+            const bit = (value >> i) & 1;
+            if (bit) {
+                this.buffer[pos] |= (1 << (7 - bitPos));
+            } else {
+                this.buffer[pos] &= ~(1 << (7 - bitPos));
+            }
+            bitPos++;
+            if (bitPos >= 8) { bitPos = 0; pos++; }
         }
-        return this.readStringAt(absOffset, 32) || fallback;
     }
 
-    // -- Player table discovery -----------------------------------------------
+    // -- Table discovery ------------------------------------------------------
 
     private discoverPlayerTable(): void {
-        if (this.buffer.length < TEAM_TABLE_MARKER + 64) {
-            this.playerTableOffset = 0;
-            this.playerCount_ = 0;
-            return;
-        }
-
-        let found = false;
-        for (
-            let offset = TEAM_TABLE_MARKER;
-            offset < this.buffer.length - DEFAULT_RECORD_SIZE * 2;
-            offset += 4
-        ) {
-            const cfidOff1 = offset + CFID_OFFSET;
-            const cfidOff2 = offset + DEFAULT_RECORD_SIZE + CFID_OFFSET;
-            if (cfidOff2 + 1 >= this.buffer.length) break;
-
-            const cfid1 = this.readU16LE(cfidOff1);
-            const cfid2 = this.readU16LE(cfidOff2);
-
-            if (cfid1 > 0 && cfid1 < 10000 && cfid2 > 0 && cfid2 < 10000) {
-                this.playerTableOffset = offset;
-                found = true;
-                break;
+        const view = new DataView(this.buffer.buffer);
+        for (let offset = 0; offset < this.buffer.length - 16; offset += 4) {
+            if (view.getUint32(offset, true) === TEAM_TABLE_MARKER) {
+                const headerSize = view.getUint32(offset + 4, true);
+                const tableStart = offset + headerSize;
+                const tableEnd = this.findTableEnd(tableStart);
+                const count = Math.floor((tableEnd - tableStart) / DEFAULT_RECORD_SIZE);
+                if (count > 0 && count < 1500) {
+                    this.playerTableOffset = tableStart;
+                    this.playerCount_ = count;
+                    return;
+                }
             }
         }
-
-        if (!found) {
-            this.playerTableOffset = 0;
-            this.playerCount_ = 0;
-            return;
-        }
-
-        // Count valid player records
         this.playerCount_ = 0;
-        for (
-            let offset = this.playerTableOffset;
-            offset + DEFAULT_RECORD_SIZE <= this.buffer.length && this.playerCount_ < MAX_PLAYERS;
-            offset += DEFAULT_RECORD_SIZE
-        ) {
-            const cfid = this.readU16LE(offset + CFID_OFFSET);
-            if (cfid === 0 && this.playerCount_ > 10) {
-                const nextCfid = this.readU16LE(offset + DEFAULT_RECORD_SIZE + CFID_OFFSET);
-                if (nextCfid === 0) break;
-            }
-            this.playerCount_++;
-        }
     }
 
-    // -- IRosterEngine implementation -----------------------------------------
+    private findTableEnd(start: number): number {
+        return Math.min(start + 1500 * DEFAULT_RECORD_SIZE, this.buffer.length);
+    }
+
+    // -- Record accessors -----------------------------------------------------
+
+    private recordStart(index: number): number {
+        return this.playerTableOffset + index * DEFAULT_RECORD_SIZE;
+    }
 
     getPlayerCount(): number {
         return this.playerCount_;
     }
 
     getPlayer(index: number): PlayerData {
-        const base = this.playerTableOffset + index * DEFAULT_RECORD_SIZE;
-        const posRaw = this.buffer[base + POSITION_OFFSET] ?? 0;
+        const rec = this.recordStart(index);
+
+        // All 43 ratings
+        const ratings: number[] = [];
+        for (let i = 0; i < RATING_DEFS.length; i++) {
+            const off = rec + RATING_OFFSETS[i];
+            ratings.push(off < this.buffer.length ? rawToDisplay(this.buffer[off]) : 25);
+        }
+
+        // All 58 tendencies
+        const tendencies: number[] = [];
+        for (let i = 0; i < TENDENCY_DEFS.length; i++) {
+            const totalBits = TENDENCY_BASE_BYTE * 8 + TENDENCY_BASE_BIT + i * 8;
+            const bo = Math.floor(totalBits / 8);
+            const bi = totalBits % 8;
+            tendencies.push(this.readBitsAt(rec, bo, bi, 8));
+        }
+
+        // 14 hot zones
+        const hotZones: number[] = [];
+        for (let i = 0; i < 14; i++) {
+            const totalBits = HOT_ZONE_BASE_BITS + i * 2;
+            const bo = Math.floor(totalBits / 8);
+            const bi = totalBits % 8;
+            hotZones.push(this.readBitsAt(rec, bo, bi, 2));
+        }
+
+        // 5 sig skills
+        const sigSkills: number[] = [];
+        for (let i = 0; i < 5; i++) {
+            const totalBits = SIG_SKILL_BASE_BYTE * 8 + SIG_SKILL_BASE_BIT + i * 6;
+            const bo = Math.floor(totalBits / 8);
+            const bi = totalBits % 8;
+            sigSkills.push(this.readBitsAt(rec, bo, bi, 6));
+        }
+
+        // Name reading
+        const readName = (offset: number): string => {
+            const absOff = rec + offset;
+            if (absOff + 3 >= this.buffer.length) return '';
+            const namePtr = this.readU16LE(absOff) | (this.readU16LE(absOff + 2) << 16);
+            if (namePtr >= this.buffer.length) return '';
+            let name = '';
+            for (let i = namePtr; i < this.buffer.length && i < namePtr + 64; i++) {
+                if (this.buffer[i] === 0) break;
+                name += String.fromCharCode(this.buffer[i]);
+            }
+            return name;
+        };
+
+        const posOff = rec + POSITION_OFFSET;
+        const posVal = posOff < this.buffer.length ? this.buffer[posOff] : 0;
 
         return {
             index,
-            cfid: this.readU16LE(base + CFID_OFFSET),
-            firstName: this.readName(base + FIRST_NAME_OFFSET, 'Player'),
-            lastName: this.readName(base + LAST_NAME_OFFSET, `#${index}`),
-            threePointRating: rawToDisplay(this.buffer[base + RATING_OFFSETS.threePointRating] ?? 0),
-            midRangeRating: rawToDisplay(this.buffer[base + RATING_OFFSETS.midRangeRating] ?? 0),
-            dunkRating: rawToDisplay(this.buffer[base + RATING_OFFSETS.dunkRating] ?? 0),
-            speedRating: rawToDisplay(this.buffer[base + RATING_OFFSETS.speedRating] ?? 0),
-            overallRating: rawToDisplay(this.buffer[base + RATING_OFFSETS.overallRating] ?? 0),
-            position: POSITION_NAMES[posRaw] ?? `${posRaw}`,
-            // Tendencies
-            tendencyStepbackShot3Pt: this.readTendencyAt(base, 0),
-            tendencyDrivingLayup: this.readTendencyAt(base, 1),
-            tendencyStandingDunk: this.readTendencyAt(base, 2),
-            tendencyDrivingDunk: this.readTendencyAt(base, 3),
-            tendencyPostHook: this.readTendencyAt(base, 4),
-            // Gear
-            gearAccessoryFlag: this.readGearAt(base, 'gearAccessoryFlag'),
-            gearElbowPad: this.readGearAt(base, 'gearElbowPad'),
-            gearWristBand: this.readGearAt(base, 'gearWristBand'),
-            gearHeadband: this.readGearAt(base, 'gearHeadband'),
-            gearSocks: this.readGearAt(base, 'gearSocks'),
-            // Signatures
-            sigShotForm: this.buffer[base + SIG_BASE_BYTE + 1] ?? 0,
-            sigShotBase: this.buffer[base + SIG_BASE_BYTE + 2] ?? 0,
+            cfid: this.readU16LE(rec + CFID_OFFSET),
+            firstName: readName(FIRST_NAME_OFFSET) || 'Player',
+            lastName: readName(LAST_NAME_OFFSET) || `#${index}`,
+            position: POSITION_NAMES[posVal] ?? `${posVal}`,
+
+            // Data-driven arrays
+            ratings,
+            tendencies,
+            hotZones,
+            sigSkills,
+
+            // Legacy named fields
+            threePointRating: ratings[4],
+            midRangeRating: ratings[3],
+            dunkRating: ratings[6],
+            speedRating: ratings[35],
+            overallRating: ratings[0],
+
+            tendencyStepbackShot3Pt: tendencies[0],
+            tendencyDrivingLayup: tendencies[1],
+            tendencyStandingDunk: tendencies[2],
+            tendencyDrivingDunk: tendencies[3],
+            tendencyPostHook: tendencies[4],
+
+            gearAccessoryFlag: this.readGearAt(rec, 'gearAccessoryFlag'),
+            gearElbowPad: this.readGearAt(rec, 'gearElbowPad'),
+            gearWristBand: this.readGearAt(rec, 'gearWristBand'),
+            gearHeadband: this.readGearAt(rec, 'gearHeadband'),
+            gearSocks: this.readGearAt(rec, 'gearSocks'),
+
+            sigShotForm: (rec + SIG_BASE_BYTE + 1 < this.buffer.length) ? this.buffer[rec + SIG_BASE_BYTE + 1] : 0,
+            sigShotBase: (rec + SIG_BASE_BYTE + 2 < this.buffer.length) ? this.buffer[rec + SIG_BASE_BYTE + 2] : 0,
         };
     }
 
-    setCFID(index: number, cfid: number): void {
-        const base = this.playerTableOffset + index * DEFAULT_RECORD_SIZE;
-        this.writeU16LE(base + CFID_OFFSET, cfid);
+    // -- Gear helpers ---------------------------------------------------------
+
+    private readGearAt(rec: number, field: GearField): number {
+        const layout = GEAR_LAYOUT[field];
+        const totalBits = GEAR_BASE_BYTE * 8 + GEAR_BASE_BIT + layout.bitOffset;
+        return this.readBitsAt(rec, Math.floor(totalBits / 8), totalBits % 8, layout.bitWidth);
     }
 
-    setRating(index: number, field: RatingField, value: number): void {
-        const offset = RATING_OFFSETS[field];
-        if (offset === undefined) return;
-        const abs = this.playerTableOffset + index * DEFAULT_RECORD_SIZE + offset;
-        if (abs < this.buffer.length) {
-            this.buffer[abs] = displayToRaw(value);
+    private writeGearAt(rec: number, field: GearField, value: number): void {
+        const layout = GEAR_LAYOUT[field];
+        const totalBits = GEAR_BASE_BYTE * 8 + GEAR_BASE_BIT + layout.bitOffset;
+        this.writeBitsAt(rec, Math.floor(totalBits / 8), totalBits % 8, layout.bitWidth, value);
+    }
+
+    // -- Setters --------------------------------------------------------------
+
+    setCFID(index: number, cfid: number): void {
+        this.writeU16LE(this.recordStart(index) + CFID_OFFSET, cfid);
+    }
+
+    setRatingById(index: number, ratingId: number, displayValue: number): void {
+        if (ratingId < 0 || ratingId >= RATING_OFFSETS.length) return;
+        const off = this.recordStart(index) + RATING_OFFSETS[ratingId];
+        if (off < this.buffer.length) {
+            this.buffer[off] = displayToRaw(displayValue);
         }
+    }
+
+    setTendencyById(index: number, tendencyId: number, value: number): void {
+        if (tendencyId < 0 || tendencyId >= 58) return;
+        const rec = this.recordStart(index);
+        const totalBits = TENDENCY_BASE_BYTE * 8 + TENDENCY_BASE_BIT + tendencyId * 8;
+        this.writeBitsAt(rec, Math.floor(totalBits / 8), totalBits % 8, 8, value & 0xFF);
+    }
+
+    setHotZone(index: number, zoneId: number, value: number): void {
+        if (zoneId < 0 || zoneId >= 14) return;
+        const rec = this.recordStart(index);
+        const totalBits = HOT_ZONE_BASE_BITS + zoneId * 2;
+        this.writeBitsAt(rec, Math.floor(totalBits / 8), totalBits % 8, 2, value & 0x3);
+    }
+
+    setSigSkill(index: number, slot: number, value: number): void {
+        if (slot < 0 || slot >= 5) return;
+        const rec = this.recordStart(index);
+        const totalBits = SIG_SKILL_BASE_BYTE * 8 + SIG_SKILL_BASE_BIT + slot * 6;
+        this.writeBitsAt(rec, Math.floor(totalBits / 8), totalBits % 8, 6, value & 0x3F);
+    }
+
+    // -- Legacy named setters (backward compat) --------------------------------
+
+    setRating(index: number, field: RatingField, value: number): void {
+        const idMap: Record<RatingField, number> = {
+            overallRating: 0, threePointRating: 4, midRangeRating: 3, dunkRating: 6, speedRating: 35,
+        };
+        this.setRatingById(index, idMap[field], value);
     }
 
     setTendency(index: number, field: TendencyField, value: number): void {
-        const tendIdx = TENDENCY_INDEX[field];
-        if (tendIdx === undefined) return;
-        const base = this.playerTableOffset + index * DEFAULT_RECORD_SIZE;
-        this.writeTendencyAt(base, tendIdx, value);
+        const idMap: Record<TendencyField, number> = {
+            tendencyStepbackShot3Pt: 0, tendencyDrivingLayup: 1, tendencyStandingDunk: 2,
+            tendencyDrivingDunk: 3, tendencyPostHook: 4,
+        };
+        this.setTendencyById(index, idMap[field], value);
     }
 
     setGear(index: number, field: GearField, value: number): void {
-        const layout = GEAR_LAYOUT[field];
-        if (!layout) return;
-        const base = this.playerTableOffset + index * DEFAULT_RECORD_SIZE;
-        this.writeGearAt(base, field, value);
+        this.writeGearAt(this.recordStart(index), field, value);
     }
 
     setSignature(index: number, field: SignatureField, value: number): void {
-        const offset = SIG_OFFSET[field];
-        if (offset === undefined) return;
-        const abs = this.playerTableOffset + index * DEFAULT_RECORD_SIZE + SIG_BASE_BYTE + offset;
-        if (abs < this.buffer.length) {
-            this.buffer[abs] = value & 0xFF;
+        const rec = this.recordStart(index);
+        const off = SIG_OFFSET[field];
+        const absOff = rec + SIG_BASE_BYTE + off;
+        if (absOff < this.buffer.length) {
+            this.buffer[absOff] = value & 0xFF;
         }
     }
 
-    // -- Bit-level helpers (JS equivalent of C++ BitStream) --------------------
-
-    private readBitsAt(absBase: number, byteOff: number, bitOff: number, count: number): number {
-        let bytePos = absBase + byteOff;
-        let bitPos = bitOff;
-        let result = 0;
-        for (let i = 0; i < count; i++) {
-            if (bytePos >= this.buffer.length) return result;
-            const bitIndex = 7 - bitPos;
-            const bit = (this.buffer[bytePos] >> bitIndex) & 1;
-            result = (result << 1) | bit;
-            bitPos++;
-            if (bitPos >= 8) { bitPos = 0; bytePos++; }
-        }
-        return result;
-    }
-
-    private writeBitsAt(absBase: number, byteOff: number, bitOff: number, count: number, value: number): void {
-        let bytePos = absBase + byteOff;
-        let bitPos = bitOff;
-        for (let i = count - 1; i >= 0; i--) {
-            if (bytePos >= this.buffer.length) return;
-            const bit = (value >> i) & 1;
-            const bitIndex = 7 - bitPos;
-            if (bit) {
-                this.buffer[bytePos] |= (1 << bitIndex);
-            } else {
-                this.buffer[bytePos] &= ~(1 << bitIndex);
-            }
-            bitPos++;
-            if (bitPos >= 8) { bitPos = 0; bytePos++; }
-        }
-    }
-
-    private readTendencyAt(recordBase: number, tendencyIndex: number): number {
-        const totalBits = TENDENCY_BASE_BYTE * 8 + TENDENCY_BASE_BIT + tendencyIndex * 8;
-        const byteOff = Math.floor(totalBits / 8);
-        const bitOff = totalBits % 8;
-        return this.readBitsAt(recordBase, byteOff, bitOff, 8);
-    }
-
-    private writeTendencyAt(recordBase: number, tendencyIndex: number, value: number): void {
-        const totalBits = TENDENCY_BASE_BYTE * 8 + TENDENCY_BASE_BIT + tendencyIndex * 8;
-        const byteOff = Math.floor(totalBits / 8);
-        const bitOff = totalBits % 8;
-        this.writeBitsAt(recordBase, byteOff, bitOff, 8, value & 0xFF);
-    }
-
-    private readGearAt(recordBase: number, field: GearField): number {
-        const layout = GEAR_LAYOUT[field];
-        const totalBits = GEAR_BASE_BYTE * 8 + GEAR_BASE_BIT + layout.bitOffset;
-        const byteOff = Math.floor(totalBits / 8);
-        const bitOff = totalBits % 8;
-        return this.readBitsAt(recordBase, byteOff, bitOff, layout.bitWidth);
-    }
-
-    private writeGearAt(recordBase: number, field: GearField, value: number): void {
-        const layout = GEAR_LAYOUT[field];
-        const totalBits = GEAR_BASE_BYTE * 8 + GEAR_BASE_BIT + layout.bitOffset;
-        const byteOff = Math.floor(totalBits / 8);
-        const bitOff = totalBits % 8;
-        const mask = (1 << layout.bitWidth) - 1;
-        this.writeBitsAt(recordBase, byteOff, bitOff, layout.bitWidth, value & mask);
-    }
+    // -- File I/O -------------------------------------------------------------
 
     saveAndRecalculateChecksum(): Uint8Array {
-        const crcValue = crc32(this.buffer, 4, this.buffer.length - 4);
-        const swapped = bswap32(crcValue);
-        this.buffer[0] = swapped & 0xFF;
-        this.buffer[1] = (swapped >> 8) & 0xFF;
-        this.buffer[2] = (swapped >> 16) & 0xFF;
-        this.buffer[3] = (swapped >> 24) & 0xFF;
-        return this.buffer;
+        // Simple CRC32 recalculation
+        const payload = this.buffer.subarray(4);
+        let crc = 0xFFFFFFFF;
+        for (let i = 0; i < payload.length; i++) {
+            crc ^= payload[i];
+            for (let j = 0; j < 8; j++) {
+                crc = (crc >>> 1) ^ ((crc & 1) ? 0xEDB88320 : 0);
+            }
+        }
+        crc = (crc ^ 0xFFFFFFFF) >>> 0;
+
+        // Write CRC as little-endian at offset 0
+        this.buffer[0] = crc & 0xFF;
+        this.buffer[1] = (crc >> 8) & 0xFF;
+        this.buffer[2] = (crc >> 16) & 0xFF;
+        this.buffer[3] = (crc >> 24) & 0xFF;
+
+        return new Uint8Array(this.buffer);
     }
 
     getFileSize(): number {
@@ -374,6 +358,6 @@ export class JsFallbackEngine implements IRosterEngine {
     }
 
     dispose(): void {
-        // No-op — JS GC handles everything
+        // Nothing to free in JS land
     }
 }

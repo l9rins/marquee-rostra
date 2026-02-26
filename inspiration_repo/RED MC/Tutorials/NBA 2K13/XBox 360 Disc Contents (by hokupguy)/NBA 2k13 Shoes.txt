@@ -1,0 +1,250 @@
+Generic
+
+000	 generic 1
+001	 generic 2
+002	 generic 3
+003 	Generic Shoes 1 Alt
+
+
+Nike
+100	 AIR MAX HYPERDUNK 2010
+101	 ZOOM LBJ 8 PS
+102	 ZOOM HYPERDUNK 2010
+103	 SHOX PRO
+104	 ZOOM HYPERFUSE
+105	 ZOOM SOLDIER IV
+106	 AM CLOSER V
+107	 ZOOM SOLDIER V
+108	 AIR ZOOM HUARACHE 2K
+109	 KD I
+110	 KD II
+111	 ZOOM LBJ VII	
+112	 SHOX HYPERBALLER
+113	 ZOOM GENERATION	
+114	 Kobe IV	
+115	 ZOOM HYPERDUNK 2011
+116	 ZOOM LBJ II	
+117	 LBJ III	
+118	 LBJ IV	
+119	 LBJ V	
+120	 LBJ VI	
+121	 ZOOM LBJ VII PS	
+122	 AIR ZOOM LBJ 8 VI	
+123	 LBJ 8 V2 AIR MAX	
+124	 ZOOM 20-5-5
+125	 ZOOM SOLDIER I	
+126	 ZOOM SOLDIER II	
+127	 SOLDIER III
+128	 HYPERFUSE 2011 LOW
+129	 ZOOM HYPERFUSE 2011
+130	 Kobe I
+131	 Kobe II
+132	 Kobe III
+133	 ZOOM HYPERDUNK
+134	 Kobe V
+135	 AIR MAX SWEEP THRU
+136	 ZOOM HYPERFUSE LOW ID
+137	 HUARACHE 2K4 ID
+138	 ZOOM KOBE VI ID
+139	 ZOOM SHARKLEY ID
+140	 AZ FLIGHT FIVE ID
+141	 KD III ID
+142	 LBJ 9 ID
+
+144	 LBJ 9 KENTUCKY 
+145	 LBJ 9 HOME
+146	 LBJ 9 OHIO STATE
+147	 LBJ 9 MIAMI
+148
+149
+150	 LBJ 9 TRIPLE BLACK
+151	 LBJ 9 CANON
+
+153	 ZOOM KB VII ID
+
+161	 KD IV ID
+162	 LBJ9 ALL STAR
+163	 Kobe VII SYSTEM ALL STAR
+164	 KD IV ALL STAR
+165	 LBJ 9 PS ELITE
+166	 HYPERDUNK ELITE
+167	 Kobe VII SYSTEM ELITE
+
+
+1149	 KD IV Away
+
+1152	 Zoom Kobe VII System
+1153	 ZOOM KB VII ID
+1154	 Zoom Kobe VII System Christmas
+1155	 LeBron 9 Christmas Day
+1156	 KD IV Christmas Day
+
+1158	 LeBron 9 BHM
+1159	 Kobe System VII BHM
+1160	 KD IV BHM
+1161	 KD IV ID
+1162	 LBJ9 ALL STAR
+1163	 Kobe VII SYSTEM ALL STAR
+1164	 KD IV ALL STAR
+1165	 LBJ 9 PS ELITE
+1166	 HYPERDUNK ELITE
+1167	 Kobe VII SYSTEM ELITE
+1168	 Air Max Penny I
+1169	 Air Hyperflight
+1170	 Air Maestro
+1171	 Air Pippen V
+1172	 ZOOM VIS UPTEMPO
+1173	 Zoom Glove
+1174	 Air Ultraflight
+1175	 Nike Blazers
+1176	 Shox BB4
+1177	 Air Max Penny II
+1178	 Air Max Penny III
+1179	 Air Max Penny IV
+1180	 Air Raid
+1181	 Zoom GP
+1182	 Zoom GP II
+1183	 Jet Flight
+1184	 Zoom Soldier IV
+1185	 Air Command FOrce
+1186	 Air Flight Huarache
+1187	 Air Force Max
+1188	 Foamposite 1
+1189	 Foamposite Pro
+1190	 Air Barwin
+1191	 Air Force High
+1192	 Air Revolution	
+1193	 Nike Dunk High	
+1194	 Flightposite	
+1195	 Shox VC I	
+1196	 Zoom Flight 95	
+1197	 KD III Scoring Champ	
+1198	 Nike Hyperdunk 2012	
+1199	 Nike Hyperdunk Plus ID 2012	
+
+1200	 Shox VC II	
+1201	 Nike Hyperdunk Plus 2012	
+1202	 LBJ X
+1203	 LBJ X
+
+1215	 HYPERFUSE 2012	
+1216	 HYPERPOSITE 2012
+
+1221 kd
+1222 kobe
+
+	
+600	 ZOOM Kobe VI
+601	 DURANT 3
+
+
+JORDAN	
+500	 I
+501	 II
+502	 III
+503	 IV
+504	 V
+505	 VI
+506	 VII
+507	 VIII
+508	 IX
+509	 X
+510	 XI
+511	 XII
+512	 XIII	
+513	 XIV	
+514	 XV
+515	 XVI
+516	 XVII	
+517	 XVIII	
+518	 XIX	
+519	 XX
+520	 XXI	
+521	 XX2	
+522	 XX3	
+523	 AJ 2009	
+524	 AJ 2010	
+525	 AJ 2011 A FLIGHT
+526	 AJ 2011 Q FLIGHT
+527	 JORDAN CP3 2 QUICK	
+528	 JORDAN MELO M8	
+529	 JORDAN BIG UPS	
+530	 JORDAN 2'SMOOTH	
+531	 JORDAN FLYWADE ID	
+532	 AJ 2011 ID	
+533	 AJ ALPHA 1 ID	
+535	 JORDAN FLY WADE 2 
+536	 JORDAN FLY WADE 2 VARSITY	
+537	 CP3 V XMAS	
+
+539	 AJ 2012 DELUXE	
+
+
+
+1540	 Air Jordan 2012	
+1541	 Jordan Aero Flight	
+1542	 Jordan CP3 V	
+1543	 Jordan CP3 VI	
+1544	 Jordan Fly Wade 2 EV D	
+1545	 JORDAN MELO M8 ADVANCE
+1547	 Jordan Play In These II
+1548	 Jordan Superfly
+
+3563	 westbrook
+
+
+Reebok	
+
+200	 Zig pro future
+201	 Zig Encore
+202	 Zig Fury
+203	 Question
+
+1209	 Sublte Pro Rise SS
+
+1212	 Kamikaze II
+1213	 Zignano Profury
+1214	 Wall Season3: Zigescape
+
+
+Adidas	
+300	 Adi Power Howard
+301	 Crazy light
+302	 Pro Model
+303	 Stupidfly light
+304	 Crazy 8
+305	 Adizero Rose 2
+306	 Adizero Shadow
+307	 Adizero Rose dominate
+308	 Adipower Howard 2
+
+1309	 AdiZero Crazy Light 2
+
+1312	 AdiPower Howard 3
+1313	 Rose 3.0
+1314	 Rose 773
+1315	 Crazy Shadow
+1316	 Top Ten 2000
+
+
+Converse	
+
+400	 Defcon
+401	 Pro leather 2K11
+402	 Pro leather Low
+403	 Weapon
+404	 Pro leather
+405	 Chuck Taylor
+
+1406	 All Star Legend
+1407	 MVP
+
+
+Underarmour	
+700	charge
+701	torch
+702 	spine bionic
+	
+
+Spalding	
+1800	 The Threat

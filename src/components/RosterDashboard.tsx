@@ -11,6 +11,7 @@
 
 import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import type { IRosterEngine, PlayerData, EditableField, RatingField, TendencyField, GearField, SignatureField } from '../engine/RosterEngine';
+import { RATING_DEFS, TENDENCY_DEFS, HOT_ZONE_NAMES, HOT_ZONE_VALUES } from '../engine/RosterEngine';
 import { createEngine } from '../engine/createEngine';
 import { RadarChart } from './RadarChart';
 import { toast } from 'sonner';
@@ -768,10 +769,12 @@ export default function RosterDashboard() {
 
                             <div className="p-6 space-y-6">
                                 <Tabs defaultValue="core">
-                                    <TabsList className="w-full">
+                                    <TabsList className="w-full grid grid-cols-5">
                                         <TabsTrigger value="core">Core</TabsTrigger>
+                                        <TabsTrigger value="ratings">Ratings</TabsTrigger>
                                         <TabsTrigger value="tendencies">Tendencies</TabsTrigger>
-                                        <TabsTrigger value="gear">Gear & Sigs</TabsTrigger>
+                                        <TabsTrigger value="hotzones">Hot Zones</TabsTrigger>
+                                        <TabsTrigger value="gear">Gear</TabsTrigger>
                                     </TabsList>
 
                                     {/* ---- Tab: Core ---- */}
@@ -826,48 +829,157 @@ export default function RosterDashboard() {
                                         </div>
                                     </TabsContent>
 
-                                    {/* ---- Tab: Tendencies ---- */}
-                                    <TabsContent value="tendencies" className="space-y-5 mt-4">
+                                    {/* ---- Tab: All 43 Ratings ---- */}
+                                    <TabsContent value="ratings" className="space-y-4 mt-4 max-h-[60vh] overflow-y-auto pr-2">
+                                        {/* Group ratings by category */}
+                                        {Object.entries(
+                                            RATING_DEFS.reduce<Record<string, typeof RATING_DEFS>>((acc, r) => {
+                                                (acc[r.category] ??= []).push(r);
+                                                return acc;
+                                            }, {})
+                                        ).map(([category, defs]) => (
+                                            <div key={category}>
+                                                <h3 className="text-xs uppercase tracking-wider text-muted-foreground mb-2 flex items-center gap-2 after:content-[''] after:flex-1 after:h-px after:bg-border">
+                                                    {category}
+                                                </h3>
+                                                <div className="space-y-2 mb-4">
+                                                    {defs.map((r) => {
+                                                        const val = profilePlayer.ratings[r.id];
+                                                        return (
+                                                            <div key={r.id} className="grid grid-cols-[120px_1fr_60px] items-center gap-3">
+                                                                <span className="text-sm font-medium text-muted-foreground truncate">{r.name}</span>
+                                                                <div className="h-1.5 bg-background rounded-full overflow-hidden">
+                                                                    <div
+                                                                        className={`h-full rounded-full transition-all duration-300 ${val >= 80 ? 'bg-gradient-to-r from-green-500 to-emerald-400'
+                                                                                : val >= 60 ? 'bg-gradient-to-r from-primary to-primary/70'
+                                                                                    : 'bg-gradient-to-r from-orange-500 to-amber-400'
+                                                                            }`}
+                                                                        style={{ width: `${val}%` }}
+                                                                    />
+                                                                </div>
+                                                                <Input
+                                                                    type="number"
+                                                                    min={25}
+                                                                    max={110}
+                                                                    className="h-7 w-14 font-mono text-xs text-right p-1"
+                                                                    value={val}
+                                                                    onChange={(e) => {
+                                                                        if (!engine) return;
+                                                                        const newVal = Math.max(25, Math.min(110, parseInt(e.target.value, 10) || 25));
+                                                                        engine.setRatingById(profilePlayer.index, r.id, newVal);
+                                                                        const updated = engine.getPlayer(profilePlayer.index);
+                                                                        setPlayers(prev => prev.map(p => p.index === profilePlayer.index ? updated : p));
+                                                                    }}
+                                                                />
+                                                            </div>
+                                                        );
+                                                    })}
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </TabsContent>
+
+                                    {/* ---- Tab: All 58 Tendencies ---- */}
+                                    <TabsContent value="tendencies" className="space-y-4 mt-4 max-h-[60vh] overflow-y-auto pr-2">
+                                        {/* Group tendencies by category */}
+                                        {Object.entries(
+                                            TENDENCY_DEFS.reduce<Record<string, typeof TENDENCY_DEFS>>((acc, t) => {
+                                                (acc[t.category] ??= []).push(t);
+                                                return acc;
+                                            }, {})
+                                        ).map(([category, defs]) => (
+                                            <div key={category}>
+                                                <h3 className="text-xs uppercase tracking-wider text-muted-foreground mb-2 flex items-center gap-2 after:content-[''] after:flex-1 after:h-px after:bg-border">
+                                                    {category}
+                                                </h3>
+                                                <div className="space-y-3 mb-4">
+                                                    {defs.map((t) => {
+                                                        const rawVal = profilePlayer.tendencies[t.id];
+                                                        const displayVal = Math.round((rawVal / 255) * 100);
+                                                        return (
+                                                            <div key={t.id} className="space-y-1">
+                                                                <div className="flex justify-between items-center">
+                                                                    <label className="text-sm font-medium truncate">{t.name}</label>
+                                                                    <span className="font-mono text-xs font-bold text-primary min-w-[32px] text-right">
+                                                                        {displayVal}
+                                                                    </span>
+                                                                </div>
+                                                                <Slider
+                                                                    min={0}
+                                                                    max={100}
+                                                                    step={1}
+                                                                    value={[displayVal]}
+                                                                    onValueChange={(val) => {
+                                                                        if (!engine) return;
+                                                                        const newRaw = Math.round((val[0] / 100) * 255);
+                                                                        engine.setTendencyById(profilePlayer.index, t.id, newRaw);
+                                                                        const updated = engine.getPlayer(profilePlayer.index);
+                                                                        setPlayers(prev => prev.map(p => p.index === profilePlayer.index ? updated : p));
+                                                                    }}
+                                                                />
+                                                            </div>
+                                                        );
+                                                    })}
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </TabsContent>
+
+                                    {/* ---- Tab: Hot Zones ---- */}
+                                    <TabsContent value="hotzones" className="space-y-4 mt-4">
                                         <h3 className="text-xs uppercase tracking-wider text-muted-foreground flex items-center gap-2 after:content-[''] after:flex-1 after:h-px after:bg-border">
-                                            Player Tendencies (0–100)
+                                            Court Hot Zones (14 zones)
                                         </h3>
-                                        {([
-                                            ['Stepback 3PT', 'tendencyStepbackShot3Pt'],
-                                            ['Driving Layup', 'tendencyDrivingLayup'],
-                                            ['Standing Dunk', 'tendencyStandingDunk'],
-                                            ['Driving Dunk', 'tendencyDrivingDunk'],
-                                            ['Post Hook', 'tendencyPostHook'],
-                                        ] as [string, TendencyField][]).map(([label, field]) => {
-                                            const rawVal = profilePlayer[field];
-                                            // Display raw 0-255 as percentage 0-100 for the slider
-                                            const displayVal = Math.round((rawVal / 255) * 100);
-                                            return (
-                                                <div key={field} className="space-y-1.5">
-                                                    <div className="flex justify-between items-center">
-                                                        <label className="text-sm font-medium">{label}</label>
-                                                        <span className="font-mono text-sm font-bold text-primary min-w-[36px] text-right">
-                                                            {displayVal}
-                                                        </span>
+                                        <div className="grid grid-cols-2 gap-3">
+                                            {HOT_ZONE_NAMES.map((name, i) => {
+                                                const val = profilePlayer.hotZones[i];
+                                                return (
+                                                    <div key={i} className="flex items-center justify-between bg-secondary border border-border rounded-lg px-3 py-2">
+                                                        <span className="text-sm font-medium truncate">{name}</span>
+                                                        <select
+                                                            className="bg-background border border-border rounded px-2 py-1 text-xs font-mono"
+                                                            value={val}
+                                                            onChange={(e) => {
+                                                                if (!engine) return;
+                                                                engine.setHotZone(profilePlayer.index, i, parseInt(e.target.value, 10));
+                                                                const updated = engine.getPlayer(profilePlayer.index);
+                                                                setPlayers(prev => prev.map(p => p.index === profilePlayer.index ? updated : p));
+                                                            }}
+                                                        >
+                                                            {Object.entries(HOT_ZONE_VALUES).map(([v, label]) => (
+                                                                <option key={v} value={v}>{label}</option>
+                                                            ))}
+                                                        </select>
                                                     </div>
-                                                    <Slider
+                                                );
+                                            })}
+                                        </div>
+
+                                        {/* Signature Skills */}
+                                        <h3 className="text-xs uppercase tracking-wider text-muted-foreground flex items-center gap-2 after:content-[''] after:flex-1 after:h-px after:bg-border mt-4">
+                                            Signature Skills (5 slots)
+                                        </h3>
+                                        <div className="space-y-2">
+                                            {[0, 1, 2, 3, 4].map((slot) => (
+                                                <div key={slot} className="grid grid-cols-[100px_1fr] items-center gap-3">
+                                                    <label className="text-sm font-medium text-muted-foreground">Slot {slot + 1}</label>
+                                                    <Input
+                                                        type="number"
                                                         min={0}
-                                                        max={100}
-                                                        step={1}
-                                                        value={[displayVal]}
-                                                        onValueChange={(val) => {
+                                                        max={63}
+                                                        className="w-20 h-7 font-mono text-xs"
+                                                        value={profilePlayer.sigSkills[slot]}
+                                                        onChange={(e) => {
                                                             if (!engine) return;
-                                                            const newRaw = Math.round((val[0] / 100) * 255);
-                                                            engine.setTendency(profilePlayer.index, field, newRaw);
+                                                            const v = Math.max(0, Math.min(63, parseInt(e.target.value, 10) || 0));
+                                                            engine.setSigSkill(profilePlayer.index, slot, v);
                                                             const updated = engine.getPlayer(profilePlayer.index);
                                                             setPlayers(prev => prev.map(p => p.index === profilePlayer.index ? updated : p));
                                                         }}
                                                     />
                                                 </div>
-                                            );
-                                        })}
-                                        <p className="text-xs text-muted-foreground pt-2 border-t border-border">
-                                            Values are mapped from 0–255 (binary) to 0–100 (display). Add more tendencies by following the pattern in <code className="bg-muted px-1 rounded">RosterEditor.cpp</code>.
-                                        </p>
+                                            ))}
+                                        </div>
                                     </TabsContent>
 
                                     {/* ---- Tab: Gear & Signatures ---- */}

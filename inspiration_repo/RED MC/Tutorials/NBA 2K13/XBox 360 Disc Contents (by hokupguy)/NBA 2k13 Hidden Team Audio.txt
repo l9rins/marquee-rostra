@@ -1,0 +1,51 @@
+Hidden Team Audio ids 
+
+50-Colorado 14ers
+51-66ers Tulsa
+52-Armor Springfield
+53-BayHawks Erie
+54-Bighorns Reno
+55-D-Fenders Los Angeles
+56- Energy Iowa
+57-Utah Flash
+58-Jam	Bakersfield
+59-Mad Ants	Fort Wayne
+60-Red Claws	Maine
+61-Skyforce	Sioux Falls
+62-Stampede	Idaho
+63-Ohio	Canton
+63-Toros	Austin
+65-Vipers	Rio Grande Valley
+66-Wizards	Dakota
+67-Legends	Texas
+
+
+300-50/60
+301-70 East
+302-70 West
+303-80 East
+304-80 West
+305-90 East
+306-90 West
+
+500- NBA 2k
+503- Internationl Superstars 
+502- VC
+504- Rookies
+505- Sophomores
+
+512- 2kchina
+
+
+520-2000 Draft Class 
+521-2001 Draft Class 
+522-2002 Draft Class 
+523-2003 Draft Class 
+524-2004 Draft Class 
+525-2005 Draft Class 
+526-2006 Draft Class 
+527-2007 Draft Class 
+
+550- Team Jordan 
+
+562- Seattle Sonics

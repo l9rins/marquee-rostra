@@ -1,0 +1,26 @@
+IMPORTANT!!!
+
+The program seems to be working very correctly and smoothly. Still, there are some things, you should know.
+
+GENERAL:
+
+1. Please, make sure, you run the program As Administrator.
+2. Always BACK UP your files before you start editing them.
+3*. Some unknown bugs still migth be in the program. Report me, if you find one, please.
+
+IFF FILES EDITING:
+
+1. Please, note, that files, edited with RED MC, are guaranteed to work correctly with RED MC and original games only.
+   It is not guaranteed, that the files will work correctly with any other 3rd party software.
+
+XBOX 360 SPECIFIC:
+
+1. Do not extract inner files from saves.
+2. Always Rehash&Resign before you put your file back to console.
+3. Do not rename files outside the console.
+
+PLAYSTATION 3 SPECIFIC:
+
+1. Always decrypt your files before editing them with RED MC, and encrypt them back before you put them back to console.
+   Recommended software to work with PS 3 saves is "Burteforce Save Data". You can find a tutorial in the Tutorials folder.
+2. "Save As..." function is disabled for PS 3, since its saves consist of multiple tightly-connected files.

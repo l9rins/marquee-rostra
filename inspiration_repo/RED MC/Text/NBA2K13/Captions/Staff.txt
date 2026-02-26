@@ -1,0 +1,51 @@
+Names:2;Bio:6;Skills:5;Status:3;Playbook:22;Total Sim Control:6
+Last_Name;Last Name;This field indicates staff member's Last Name
+First_Name;First Name;This field indicates staff member's First Name
+SType;Staff Type;Stands for the type of the staff member
+#
+Experience;Experience;How many years the coach has been in the NBA.
+#
+PortrID;Portrait ID;Staff member’s portrait is defined by this ID value
+CF_ID;CyberFace ID;Staff member’s in-match face is defined by this ID value
+#
+Height;Height;Represents staff member’s height;H
+#
+AudioID;Audio ID;Audio stories, told by commentators about the staff member during matches
+SOffense;Offense;Offensive Skill (used by coaches)
+SDefense;Defense;Defensive Skill (used by coaches)
+STeacher;Teacher;Teaching Skill (used by coaches)
+SSct_Trn;Scout / Trainer;Scouting skill for scouts and Medical skill for Trainers
+SPotential;Potential;Potential of the staff member
+TeamGID;Team GID;The same as Team Graphics ID
+#
+CYears;Years;Number of staff member’s contract years
+CMoney;Money;Contract Money
+PlaybookID;Playbook ID;ID of the default Playbook, used by the coach
+#
+POffTempo;Offensive Tempo;Profile - Offensive Tempo
+PDefPress;Defensive Pressure;Profile - Defensive Pressure
+PHelpDef;Help Defense;Profile - Help Defense
+PFastBrk;Fast Break;Profile - Fast Break
+PCrBoards;Crash Boards;Profile - Crash Boards
+PBnchDepth;Bench Depth;Profile - Bench Depth
+PRunPlays;Run Plays;Profile - Run Plays
+PDblTeams;Double Teams;Profile - Double Teams
+PZoneUsg;Zone Usage;Profile - Zone Usage
+PTkInsShts;Take Inside Shots;Profile - Take Inside Shots
+PTkClsShts;Take Close Shots;Profile - Take Close Shots
+PTkMidShts;Take Mid-Range Shots;Profile - Take Mid-Range Shots
+PTk3PTShts;Take 3-Point Shots;Profile - Take 3-Point Shots
+PAttBskt;Attack The Basket;Profile - Attack The Basket
+PLookPostP;Look for Post Players;Profile - Look for Post Players
+PThrowAOs;Throw Alley-Oops;Profile - Throw Alley-Oops
+PSizeSpd;Size vs. Speed;Profile - Size vs. Speed
+PAthlSkill;Athleticism vs. Skill;Profile - Athleticism vs. Skill
+POffDef;Offense vs. Defense;Profile - Offense vs. Defense
+PGrdsFrwds;Guards vs. Forwards;Profile - Guards vs. Forwards
+PInsOuts;Inside vs. Outside;Profile - Inside vs. Outside
+TOShotSel;Shot Selection;Total Sim Control - Offense - Shot Selection
+TOFocus;Offensive Focus;Total Sim Control - Offense - Offensive Focus
+TORebound;Offensive Rebounding;Total Sim Control - Offense - Offensive Rebounding
+TDPressure;Defensive Pressure;Total Sim Control - Defense - Defensive Pressure
+TDStyle;Defensive Style;Total Sim Control - Defense - Defensive Style
+TDRebound;Defensive Rebounding;Total Sim Control - Defense - Defensive Rebounding

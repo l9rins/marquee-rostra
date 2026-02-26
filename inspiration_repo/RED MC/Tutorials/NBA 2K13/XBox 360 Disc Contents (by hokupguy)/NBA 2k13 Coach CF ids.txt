@@ -1,0 +1,653 @@
+Last    Frist		CFID	PORT ID
+Vaughn	Jacque		437	437
+
+Hamre	Matt		503	503
+Thomas	Greg		504	504
+Yang	Johnnie		509	509
+Jones	Nick		709	709
+Kaneko	Quinn		853	853
+Cardona	Alvin		865	865
+Lee	David		974	974
+Wang	Mike		1244	1244
+Tse	Roy		1248	1248
+Copelovici	David	1367	1367
+Townsend	Brian	1368	1368
+Townsend	Matt	1369	1369
+Gregory	Jonathan	1370	1370
+Peete	Dion		1396	1396
+Fok	Herman		1400	1400
+Boenisch	Erick	1402	1402
+Schroeder	Tim	1403	1403
+Anderson	Thomas	1404	1404
+Unsworth	Tor	1487	1487
+Jones	Rhys		1488	1488
+Timmerman	Zach	1493	1493
+Sapida	Jerson		1494	1494
+Lee	Shawn		1595	1595
+Myers	Ivan		1597	1597
+Iwahashi	Jay	1598	1598
+Obama	Barack		1861	1861
+Samuel	Nino		1866	1866
+Dillard	Eric		1867	1867
+Burchanowski	David	2109	2109
+Austin	Bryan		2110	2110
+Henderson	Ocie	2111	2111
+Jones	Brad		2112	2112
+Harris	Bryan		2113	2113
+Brough	John		2114	2114
+Skiles	Scott		5000	5000
+Saunders	Flip	5001	5001
+Brown	Mike		5002	5002
+Rivers	Doc		5003	5003
+Hollins	Lionel		5004	5004
+Spoelstra	Erik	5005	5005
+Sloan	Jerry			5006 Black Arms 
+Westphal Paul			5007 Black Arms
+D'Antoni	Mike	5008	5008
+Jackson	Phil			5009 Black Arms 
+Van Gundy	Stan	5010	5010 Black Arms
+Carlisle	Rick	5011	5011
+Karl	George		5012	5012
+O'Brien	Jim			5013 Black Arms 
+Kuester	John		5014	5014
+Triano	Jay			5015 Black Arms 
+Adelman	Rick		5016	5016
+Brooks	Scott		5017	5017
+Popovich	Gregg	5018	5018
+Gentry	Alvin		5019	5019
+Rambis	Kurt			5020 Black Arms 
+McMillan	Nate	5021	5021
+Nelson	Don		5022	5022
+Brown	Larry			5023 Black Arms 
+Terry Poter			5024 Black Arms
+Eddie Jordan			5025 Black Arms 
+Mike Dunlevey			5026 Black Arms
+mike fortello			5027 black arms
+mike woodson			5028 
+Scott	Byron		5029	5029
+Frank	Lawrence	5030	5030
+Mitchell	Sam	5031	5031 
+Jeff Van gundy 			5032 black arms
+Cheeks	Maurice		5033	5033
+Mike Montgomery 		5034 head shot only 
+Bickerstaff	Bernie	5035	5035
+Randy Whitman 			5036 black arms 
+Pat Riley			5037 black arms 
+Stotts	Terry		5038	5038
+Isiah Thomas			5039 Black Arms 
+Johnson	Avery		5040	5040 
+Hill	Brian		5041	5041
+Casey	Dwane		5042	5042
+Bob Hill pic only no face	5043 head shot only 
+Larry krystkowiak		5044 black arms
+Rudy T				5045 Black Arms
+Jim Paxson			5046 black arms
+Iavaroni	Marc	5047	5047
+San Vincent			5048 Black Arms
+Reggie Theus			5049 Black Arms
+PJ Carlismo			5050 Black Arms
+David Stern			5051 black arms
+Curry	Michael		5052	5052
+Del Negro	Vinny	5053	5053
+McHale	Kevin		5054	5054
+Collins	Doug		5055	5055
+Jackson	Mark		5056	5056
+??? Not sure ???? Danny Angie?	5057 Black Arms
+Marrinson	Andrew	5058	5058
+Jones	Rob		5059	5059 Black Arms
+Thomas	Greg		5060	5060 Black Arms
+Cardona	Alvin		5061	5061 Black Arms
+Stan Albeck			5062 Bulls coach 85-86 Black Arms
+Jones	K.C.			5063 Black Arms
+Jackson	Phil			5064 early 90's Black Arms
+Mike Fertilo pic only 		5065 pic only 
+Wilkens	Lenny			5066 Black Arms
+Chuck Daily			5067 Black Arms
+Dunleavy Mike			5068 91 finals Black Arms
+Adelman	Rick			5069 92 Finals Black Arms
+Phil jackson			5070 black arms ear;y 90s
+Pat Riliey Pic only 		5071 head shot only
+Jackson	Phil			5072? Black Arms mid late 90,s
+Karl	George		5073	5073
+Phil jackson			5074 black arms 00's
+Sloan	Jerry			5075 late 90's Black Arms
+Jackson	Phil			5076 Black Arms late 90's
+Sloan	Jerry			5077 Black Arms late 90's
+Ayers	Randy		5078	5078
+Lynam	Jim		5079	5079
+Ruland	Jeff			5080 Black Arms
+Rob Werdann			5081 black ARms 
+Ford	Phil			5082 Black Arms
+Capel	Jeff		5083	5083
+herb brown			5084 black arms 
+Boylan	Jim		5085	5085
+Kelvin Sampson			5086 black arms
+Wolf	Joe		5087	5087
+Harris	Del			5088 Black Arms
+bob ociepka			5089 Black Arms
+Egan	Hank		5090	5090
+Hunt	Melvin		5091	5091
+Hall	Robert		5091	5091
+Thibodeau	Tom	5092	5092
+Hill	Armond		5093	5093
+jim eyen			5094 Black Arms
+Hughes	Kim		5095	5095
+Gilbert	Kevin		5095	5095
+White	Rory			5096 Black Arms
+Davis	Johnny		5097	5097 
+Bibby	Henry		5098	5098
+david joerger			5099 Black Arms
+Drew	Larry		5100	5100
+Gentry	Jeff		5100	5100
+Bender	Bob		5101	5101
+Miller	Art		5101	5101
+Todd	Jim		5102	5102
+McAdoo	Bob		5103	5103
+Rothstein	Ron	5104	5104
+Fizdale	David			5105 Black Arms
+Gattison	Kenny	5106	5106
+charlie parker			5107 Black Arms
+Jackson	George		5108	5108
+Pressey	Paul		5108	5108
+Phil Johnson			5109 Black Arms
+Corbin	Tyrone		5110	5110
+Layden	Scott		5111	5111
+Hamm	Jason			5112 Black Arms
+Brown	Randy		5113	5113
+Williams	Herb	5114	5114
+Weber	Phil		5115	5115
+Mason	Bobby		5115	5115
+Hamilton	Dean	5116	5116
+D'Antoni	Dan	5116	5116
+Cleamons	Jim	5117	5117
+Hamblen	Frank			5118 Black Arms
+Malone	Brendan			5119 Black Arms
+Ewing	Patrick		5120	5120
+Clifford	Steve	5121	5121
+Hamlin	Ronald		5121	5121
+Peterson	Matt	5122	5122
+Sterner	Tom		5122	5122
+Oliver	Anthony		5123	5123
+Barrise	Tom		5123	5123
+young black coach		5124
+Dantley	Adrian		5125	5125
+Sanders	Norm		5126	5126
+Welch	John		5126	5126
+tim grgurich			5127 Black Arms
+Harter	Dick			5128 Black Arms
+Conner	Lester		5129	5129
+Burke	Dan		5130	5130
+Sherman	Sidney		5130	5130
+Walker	Darrell		5131	5131
+Cowens	Dave		5132	5132
+Gatson	Rob		5133	5133
+Sullivan	Pat	5133	5133
+English	Alex		5134	5134
+Evans	Mike		5135	5135
+Thorpe	Chad		5135	5135
+Sikma	Jack			5136 Black Arms
+Turner	Elston			5137 Black Arms
+Spencer	Gerald		5138	5138
+Dunn	T.R.		5138	5138
+Budenholzer	Mike	5139	5139
+Flory	James		5139	5139
+Budenholzer	Mike	5139	5139
+Newman	Don			5140 Black Arms
+O'Brien	James		5141	5141
+Brown	Brett		5141	5141
+Cartwright	Bill	5142	5142
+Majerle	Dan		5143	5143
+Igor Kosokov		5144 Black Arms
+
+Lewis	Ralph		5146	5146
+Vincent	Morris		5146	5146
+Ron Adams		5147 Black Arms
+Kalamian	Rex	5148	5148
+Atkins	Chris		5148	5148
+BickerstaffJohn-Blair	5149	5149
+Dailey	Charles		5149	5149
+Cooper	Dean		5150 Black Arms
+Olson	Brian		5151	5151
+Sichting	Jerry	5151	5151
+Lucas	Maurice	        5152	5152
+Williams	Monty	5153	5153
+joe prunty 		5154 Black Arms
+Smart	Keith		5155	5155
+Graham	James		5156	5156
+Silas	Stephen		5156
+russell turner 			5157 Black Arms
+phil hubbard 			5158 Black Arms
+Unseld Jr	Wes	5159	5159
+Stuart	Alfred		5159	5159
+Myers	Pete			5160 Black Arms
+Malone	Mike		5161	5161
+Lue	Mark		5161	5161
+Eastman	Kevin		5162	5162
+Finley	Ron		5162	5162
+Eastman	Kevin		5162	5162
+John Lucas			5163 Black Arms
+Tony Brown			5164 Black Arms
+Floyd	Tim			5165 Black Arms
+Elie	Mario		5166	5166
+Shaw	Brian		5167	5167
+Dave Wohl		5168 Black Arms 
+Laimbeer	Bill	5169	5169
+Cassell	Sam		5170	5170
+Tse	Roy		5171	5171
+Hamre	Matt		5172	5172
+ 
+lynell jinks			5174
+ 
+Vogel	Frank		5187	5187
+Silas	Paul		5188	5188
+Pinckney	Ed	5189	5189
+Dunlap	Mike		5191	5191
+
+5199
+5200
+
+
+
+trainers / scouts 
+Johnson	Kevin		5500	5500-nothing ?
+Stricker	Steve	5501	5501 = Head shot only
+Boff	Marc		5502	5502 = Head shot only
+Tedeschi	Fred	5503	5503 = Head shot only
+Benton	Max		5504	5504 = Head shot only
+Lacerte	Ed		5505	5505 = Head shot only
+Powell	Jasen		5506	5506 = Head shot only
+Graham	Drew		5507	5507 = Head shot only
+Blase	Wally		5508	5508 = Head shot only
+Sabol	Jay		5509	5509-nothing?
+Ishop	Jon		5510	5510 = Head shot only
+Briggs	Gary		5511	5511 = Head shot only
+Youngman	Pete	5512	5512 = Head shot only
+Hinds	Roger		5513	5513 = Head shot only
+Vitti	Gary		5514	5514= Head shot only
+Weise	Keon		5515	5515-nothing?
+Smith	Casey		5516	5516= Head shot only
+Walsh	Tim		5517	5517= Head shot only
+Gillen	Jim		5518	5518= Head shot only
+Corbeil	Josh		5519	5519= Head shot only
+Abdenour	Mike	5520	5520= Head shot only
+McCullough	Scott	5521	5521= Head shot only
+Jones	Keith		5522	5522= Head shot only
+Sevening	Will	5523	5523= Head shot only
+Nelson	Aaron		5524	5524= Head shot only
+Sharpe	Joe		5525	5525= Head shot only
+Farnam	Gregg		5526	5526= Head shot only
+Jensen	Jay		5527	5527= Head shot only
+Abdenour	Tom	5528	5528= Head shot only
+
+hybrid faces
+Waters	Eric		5529	5529= Head shot only
+Park	Cameron		5530	5530= Head shot only
+Gambin	Terence		5530	5530= Head shot only
+Roberts	Danny		5530	5530= Head shot only
+Brown	Howard		5530	5530= Head shot only
+Sampson	Ron		5530	5530= Head shot only
+Forrest	Joel		5530	5530= Head shot only
+Saunders	Eric	5531	5531= Head shot only
+O'Brien	Trent		5531	5531= Head shot only
+Burgess	K.C.		5531	5531= Head shot only
+Johnson	Jesse		5531	5531= Head shot only
+Samuels	Drew		5531	5531= Head shot only
+Gilbert	Kevin		5531	5531= Head shot only
+Ash	Curtis		5532	5532= Head shot only
+Thomas	Clay		5532	5532= Head shot only
+Masters	Matt		5532	5532= Head shot only
+Gentry	Jeff		5532	5532= Head shot only
+Joseph	Erick		5532	5532= Head shot only
+Waller	Clark		5532	5532= Head shot only
+Cameron	Mike		5533	5533= Head shot only
+McArthur	Wes	5533	5533= Head shot only
+Klein	Steven		5533	5533= Head shot only
+Atkins	Chris		5533	5533= Head shot only
+Bell	Damien		5533	5533= Head shot only
+Hughes	Kyle		5533	5533= Head shot only
+Petit	Eugene		5534	5534= Head shot only
+Turner	Phillip		5534	5534= Head shot only
+Hamlin	Ronald		5534	5534= Head shot only
+Trueman	Don		5534	5534= Head shot only
+Thomas	Kevin		5534	5534= Head shot only
+Williams	Danny	5534	5534= Head shot only
+Green	Tim		5535	5535= Head shot only
+Shaw	Mike		5535	5535= Head shot only
+Patton	Bernard		5535	5535= Head shot only
+Oliver	Anthony		5535	5535= Head shot only
+Donalds	Allan		5535	5535= Head shot only
+Peterson	Matt	5536	5536= Head shot only
+Ford	Drew		5536	5536= Head shot only
+Green	Mark		5536	5536= Head shot only
+Hunter	Gary		5536	5536= Head shot only
+Smith	Keith		5536	5536= Head shot only
+Morgan	William		5537	5537= Head shot only
+Trust	Ed		5537	5537= Head shot only
+Newsom	Vince		5537	5537= Head shot only
+Sanders	Norm		5537	5537= Head shot only
+Dawson	Rob		5537	5537= Head shot only
+Meyer	Lewis		5538	5538= Head shot only
+Oliver	Lee		5538	5538= Head shot only
+Sandford	Derek	5538	5538= Head shot only
+Sherman	Sidney		5538	5538= Head shot only
+Staples	Fred		5538	5538= Head shot only
+Gatson	Rob		5539	5539= Head shot only
+Parker	Ben		5539	5539= Head shot only
+James	Brad		5539	5539= Head shot only
+Taylor	Frank		5539	5539= Head shot only
+Reed	Gary		5539	5539= Head shot only
+Lantz	Ryan		5540	5540= Head shot only
+Thorpe	Chad		5540	5540= Head shot only
+Adams	Gary		5540	5540= Head shot only
+Robinson	Greg	5540	5540= Head shot only
+Walker	Ryan		5540	5540= Head shot only
+Baxter	Harvey		5541	5541= Head shot only
+Hobson	Harry		5541	5541= Head shot only
+Lucas	Randy		5541	5541= Head shot only
+Malone	Johnny		5541	5541= Head shot only
+Spencer	Gerald		5541	5541= Head shot only
+O'Brien	James		5542	5542= Head shot only
+Toole	Dana		5542	5542= Head shot only
+Reeves	Glen		5542	5542= Head shot only
+Jackson	Kevin		5542	5542= Head shot only
+Roberts	Danny		5542	5542= Head shot only
+Vincent	Morris		5543	5543= Head shot only
+O'Brien	Trent		5543	5543= Head shot only
+Bryant	Frank		5543	5543= Head shot only
+Hollis	Ron		5543	5543= Head shot only
+Harper	Cole		5543	5543= Head shot only
+Wells	Earl		5544	5544= Head shot only
+Ray	Andy		5544	5544= Head shot only
+Olson	Brian		5544	5544= Head shot only
+Chase	Eddie		5544	5544= Head shot only
+Joseph	Erick		5544	5544= Head shot only
+Hamilton	Dean	5545	5545= Head shot only
+Blake	Scott		5545	5545= Head shot only
+Bartlett	Jim	5545	5545= Head shot only
+Perry	Nick		5545	5545= Head shot only
+Klein	Steven		5545	5545= Head shot only
+Turner	Phillip		5546	5546-nothing
+Kane	Jason		5546	5546-nothing
+Mills	Marc		5546	5546-nothing
+Powell	Junior		5546	5546-nothing
+Sutton	Jason		5546	5546-nothing
+Hartman	Alex		5547	5547= Head shot only
+Flanders	Kirk	5547	5547= Head shot only
+Mason	Bobby		5547	5547= Head shot only
+Donalds	Allan		5547	5547= Head shot only
+Garnett	Brian		5547	5547= Head shot only
+Jackson	Rob		5547	5547= Head shot only
+Phillips	Marc	5548	5548= Head shot only
+Source	Nathan		5548	5548= Head shot only
+Lee	Rustin		5548	5548= Head shot only
+Grant	Ray		5548	5548= Head shot only
+Fisher	Dan		5548	5548= Head shot only
+Green	Mark		5548	5548= Head shot only
+Montgomery	Glen	5549	5549= Head shot only
+Washington	Travis	5549	5549= Head shot only
+Cruise	Kevin		5549	5549= Head shot only
+West	Taylor		5549	5549= Head shot only
+Alford	Lance		5549	5549= Head shot only
+Newsom	Vince		5549	5549= Head shot only
+Gregory	Dan		5550	5550= Head shot only
+Murphy	Kevin		5550	5550= Head shot only
+Stuart	Alfred		5550	5550= Head shot only
+Downey	Randy		5550	5550= Head shot only
+Walker	Ryan		5550	5550= Head shot only
+Oliver	Lee		5550	5550= Head shot only
+Bryant	Allan		5551	5551= Head shot only
+Mack	Wayne		5551	5551= Head shot only
+Lucas	Randy		5551	5551= Head shot only
+Parker	Ben		5551	5551= Head shot only
+Kane	Jason		5551	5551= Head shot only
+Woods	Michael		5551	5551= Head shot only
+Fisher	Craig		5552	5552= Head shot only
+Shipp	Martin		5552	5552= Head shot only
+Reeves	Glen		5552	5552= Head shot only
+Walker	Ryan		5552	5552= Head shot only
+Johnson	Walt		5552	5552= Head shot only
+Woods	Steve		5553	5553= Head shot only
+Hollis	Ron		5553	5553= Head shot only
+Lucas	Randy		5553	5553= Head shot only
+Cook	Sean		5553	5553= Head shot only
+Panel	Robert		5553	5553= Head shot only
+Griffin	Guy		5553	5553= Head shot only
+Reeves	Glen		5554	5554= Head shot only
+Hunter	Marc		5554	5554= Head shot only
+Smith	Allen		5554	5554= Head shot only
+Chase	Eddie		5554	5554= Head shot only
+McFadden	B.J.	5554	5554= Head shot only
+Washington	Travis	5554	5554= Head shot only
+Strum	Eric		5555	5555-nothing
+Blake	Scott		5555	5555-nothing
+Perkinson	Henry	5555	5555-nothing
+Bailey	Keith		5555	5555-nothing
+Hollis	Ron		5555	5555-nothing
+Hale	Don		5556	5556= Head shot only
+Chase	Eddie		5556	5556= Head shot only
+Channing	Ray	5556	5556= Head shot only
+Brady	Steve		5556	5556= Head shot only
+Sutton	Jason		5556	5556= Head shot only
+Malone	Bobby		5557	5557= Head shot only
+Wagner	Dillon		5557	5557= Head shot only
+Blake	Scott		5557	5557= Head shot only
+Hartman	Alex		5557	5557= Head shot only
+Fisher	Craig		5557	5557= Head shot only
+Williams	Todd	5557	5557= Head shot only
+Norris	Jeff		5558	5558= Head shot only
+Source	Nathan		5558	5558= Head shot only
+Sutton	Jason		5558	5558= Head shot only
+Simmons	Allen		5558	5558= Head shot only
+Norris	Jeff		5558	5558= Head shot only
+Gooding	Michael		5559	5559= Head shot only
+Long	James		5559	5559= Head shot only
+Howard	Damon		5559	5559= Head shot only
+Hartman	Alex		5559	5559= Head shot only
+Nelson	Jeremy		5559	5559= Head shot only
+Porter	Damon		5560	5560= Head shot only
+Otto	Marlon		5560	5560= Head shot only
+Rose	Will		5560	5560= Head shot only
+Source	Nathan		5560	5560= Head shot only
+Hill	Tony		5560	5560= Head shot only
+Hamilton	Tony	5561	5561= Head shot only
+West	Taylor		5561	5561= Head shot only
+Button	Neil		5561	5561= Head shot only
+Hamilton	Tony	5561	5561= Head shot only
+Ayers	Travis		5561	5561= Head shot only
+Wagner	Dillon		5562	5562= Head shot only
+Atkins	Peter		5562	5562= Head shot only
+Barry	Sean		5562	5562= Head shot only
+Jones	Phil		5562	5562= Head shot only
+Simms	Richard		5562	5562= Head shot only
+Carter	Wes		5563	5563= Head shot only
+Jackson	Gary		5563	5563= Head shot only
+Collins	Walter		5563	5563= Head shot only
+Spencer	Trent		5563	5563= Head shot only
+Baker	Alan		5564	5564= Head shot only
+Beauford	Randy	5564	5564= Head shot only
+Butler	Andre		5564	5564= Head shot only
+Morrison	Pete	5564	5564= Head shot only
+Perry	David		5565	5565= Head shot only
+Wright	Christian	5565	5565= Head shot only
+Cook	Drew		5565	5565= Head shot only
+Asher	Craig		5565	5565= Head shot only
+Foster	Dave		5565	5565= Head shot only
+James	Kyle		5566	5566= Head shot only
+Randolph	Eddie	5566	5566= Head shot only
+James	Kyle		5566	5566= Head shot only
+Dailey	Maurice		5566	5566= Head shot only
+Ford	Randy		5566	5566= Head shot only
+Davidson	Clay	5567	5567= Head shot only
+Simms	Richard		5567	5567= Head shot only
+Monroe	Edward		5567	5567= Head shot only
+Daniels	James		5567	5567= Head shot only
+Rush	Matt		5568	5568= Head shot only
+Banks	Eddie		5568	5568= Head shot only
+Bell	Steven		5568	5568= Head shot only
+Green	Andy		5568	5568= Head shot only
+Jones	Ralph		5569	5569= Head shot only
+Ramsey	Brian		5569	5569= Head shot only
+Payton	Quentin		5569	5569= Head shot only
+Thorpe	Dan		5569	5569= Head shot only
+Garnett	Rod		5570	5570= Head shot only
+Holt	Patrick		5570	5570= Head shot only
+Stokes	Howard		5570	5570= Head shot only
+Hicks	Dan		5570	5570= Head shot only
+Barnes	Jon		5570	5570= Head shot only
+Spencer	George		5570	5570= Head shot only
+Lucas	James		5571	5571= Head shot only
+O'Brien	Alex		5571	5571= Head shot only
+Lucas	James		5571	5571= Head shot only
+Grant	Cliff		5571	5571= Head shot only
+Best	Richard		5571	5571= Head shot only
+Williamson	Andre	5572	5572= Head shot only
+Hamilton	Reid	5572	5572= Head shot only
+Davis	Gilbert		5572	5572= Head shot only
+Strong	Rob		5573	5573= Head shot only
+Francis	Will		5573	5573= Head shot only
+Vincent	Clay		5573	5573= Head shot only
+Dixon	Bruce		5573	5573= Head shot only
+Myers	Barry		5573	5573= Head shot only
+Sampson	Andre		5573	5573= Head shot only
+Beck	Joe		5574	5574= Head shot only
+Olson	Stan		5574	5574= Head shot only
+Dailey	Greg		5574	5574= Head shot only
+Graham	Larry		5574	5574= Head shot only
+Marty	Brian		5574	5574= Head shot only
+Hughes	Dale		5575	5575= Head shot only
+Mills	Richard		5575	5575= Head shot only
+Brown	Gary		5575	5575= Head shot only
+Davidson	Stan	5575	5575= Head shot only
+Jefferson	Kevin	5575	5575= Head shot only
+Thomas	Gabe		5575	5575= Head shot only
+Mason	Trent		5576	5576= Head shot only
+Thomas	Phil		5576	5576= Head shot only
+Brown	Keith		5576	5576= Head shot only
+Johnson	Brian		5576	5576= Head shot only
+Lee	Randy		5577	5577= Head shot only
+Teague	John		5577	5577= Head shot only
+Thomas	Kyle		5577	5577= Head shot only
+Herman	Tom		5577	5577= Head shot only
+Nicholson	Norm	5578	5578= Head shot only
+Hughes	Rick		5578	5578= Head shot only
+Jacobs	Ed		5578	5578= Head shot only
+Franklin	Pat	5578	5578= Head shot only
+Cruise	Richard		5578	5578= Head shot only
+Harrison	Frank	5578	5578= Head shot only
+Woods	Eddie		5579	5579= Head shot only
+Williams	Steve	5579	5579= Head shot only
+Washington	Brian	5579	5579= Head shot only
+Ellis	Pat		5579	5579= Head shot only
+Cross	Grant		5579	5579= Head shot only
+Payton	Quentin		5579	5579= Head shot only
+Thomas	Ray		5580	5580= Head shot only
+Reid	Doug		5580	5580= Head shot only
+Rhodes	Quincy		5580	5580= Head shot only
+Graham	Ben		5580	5580= Head shot only
+Garnett	Rod		5580	5580= Head shot only
+Green	David		5580	5580= Head shot only
+Bowen	Justin		5581	5581= Head shot only
+Malone	Dillon		5581	5581= Head shot only
+Smith	Greg		5581	5581= Head shot only
+Murray	Steve		5581	5581= Head shot only
+Evans	Rob		5581	5581= Head shot only
+Rose	Jared		5582	5582= Head shot only
+Button	Gary		5582	5582= Head shot only
+Mills	David		5582	5582= Head shot only
+Jackson	Zach		5582	5582= Head shot only
+Williamson	Dillon	5582	5582= Head shot only
+Rogers	Daniel		5583	5583= Head shot only
+Walker	Peter		5583	5583= Head shot only
+Francis	Jared		5583	5583= Head shot only
+Smith	Luke		5583	5583= Head shot only
+Parker	Michael		5583	5583= Head shot only
+Faulk	Chad		5583	5583= Head shot only
+Henry	Brian		5584	5584= Head shot only
+Taylor	Brad		5584	5584= Head shot only
+Washington	Sammy	5584	5584= Head shot only
+Thomas	Josh		5584	5584= Head shot only
+Francis	Tim		5584	5584= Head shot only
+Gatson	Sean		5584	5584= Head shot only
+Rowland	Howard		5585	5585= Head shot only
+Mills	Gary		5585	5585= Head shot only
+Reid	Mike		5585	5585= Head shot only
+Fish	Joe		5585	5585= Head shot only
+Thomas	Junior		5585	5585= Head shot only
+Dailey	Allen		5585	5585= Head shot only
+Gregory	Ernie		5586	5586= Head shot only
+Jackson	Andre		5586	5586= Head shot only
+Thomas	Michael		5586	5586= Head shot only
+Smith	Jay		5586	5586= Head shot only
+West	Billy		5586	5586= Head shot only
+Davis	Mitch		5586	5586= Head shot only
+West	Theo		5587	5587= Head shot only
+Miller	Mark		5587	5587= Head shot only
+Yau	Don		5587	5587= Head shot only
+Ellis	Gerald		5587	5587= Head shot only
+West	Alex		5587	5587= Head shot only
+Lucas	Clay		5588	5588= Head shot only
+Johnson	Tony		5588	5588= Head shot only
+Grant	Kenny		5588	5588= Head shot only
+Evans	Travis		5588	5588= Head shot only
+Mason	Joel		5588	5588= Head shot only
+Griffin	Mike		5589	5589= Head shot only
+Anderson	Dan	5589	5589= Head shot only
+Lee	Jim		5589	5589= Head shot only
+Hunter	Dan		5589	5589= Head shot only
+Cook	Earl		5589	5589= Head shot only
+Howard	Allan		5590	5590= Head shot only
+Graham	James		5590	5590= Head shot only
+Green	Gary		5590	5590= Head shot only
+Wilkins	Frank		5590	5590= Head shot only
+Green	George		5590	5590= Head shot only
+Morgan	William		5591	5591= Head shot only
+McArthur	Wes	5591	5591= Head shot only
+Brand	Brian		5591	5591= Head shot only
+Nicholson	William	5591	5591= Head shot only
+Willis	Anthony		5591	5591= Head shot only
+Jackson	George		5592	5592= Head shot only
+Meyer	Maurice		5592	5592= Head shot only
+Petit	Eugene		5592	5592= Head shot only
+Moore	Daniel		5592	5592= Head shot only
+Davis	Walt		5592	5592= Head shot only
+Finley	Ron		5593	5593= Head shot only
+Paul	Jim		5593	5593= Head shot only
+Murray	Guy		5593	5593= Head shot only
+Turner	Randy		5593	5593= Head shot only
+Patton	Bernard		5593	5593= Head shot only
+Moore	Trevor		5594	5594= Head shot only
+Baker	Drew		5594	5594= Head shot only
+Best	Rick		5594	5594= Head shot only
+Hunter	Gary		5594	5594= Head shot only
+Jones	Jim		5594	5594= Head shot only
+Brown	Larry		5595	5595= Head shot only
+Jameson	Ace		5595	5595= Head shot only
+Smith	Sean		5595	5595= Head shot only
+Miller	Art		5595	5595= Head shot only
+Morgan	William		5595	5595= Head shot only
+Taylor	Jerry		5596	5596= Head shot only
+Meyer	Lewis		5596	5596= Head shot only
+Davis	Mitchell	5596	5596= Head shot only
+Hall	Robert		5596	5596= Head shot only
+Babcock	Paul		5596	5596= Head shot only
+Meyer	Anderson	5597	5597= Head shot only
+James	Brad		5597	5597= Head shot only
+Tucker	Nelson		5597	5597= Head shot only
+Davis	Lonnie		5597	5597= Head shot only
+Dailey	Charles		5597	5597= Head shot only
+Lantz	Ryan		5598	5598= Head shot only
+Flory	James		5598	5598= Head shot only
+Newsom	Ben		5598	5598= Head shot only
+Dixon	Craig		5598	5598= Head shot only
+Wilkins	Lou		5598	5598= Head shot only
+Baxter	Harvey		5599	5599= Head shot only
+Lue	Mark		5599	5599= Head shot only
+Graham	Curtis		5599	5599= Head shot only
+Smith	Mike		5599	5599= Head shot only
+Harrison	Brent	5599	5599= Head shot only
+
+5600 head shot only kerry kittles
+
+6000 ? black guy
+6001 ? Look like tim legier black arms
+6002 ? Old white guy asst maybe

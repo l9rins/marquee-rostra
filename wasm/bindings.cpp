@@ -31,6 +31,15 @@ EMSCRIPTEN_BINDINGS(roster_editor_module) {
         .function("get_first_name",          &Player::get_first_name)
         .function("get_last_name",           &Player::get_last_name)
         .function("get_position",            &Player::get_position)
+        // -- Data-driven (covers ALL ratings/tendencies) --
+        .function("get_rating_by_id",        &Player::get_rating_by_id)
+        .function("set_rating_by_id",        &Player::set_rating_by_id)
+        .function("get_tendency_by_id",      &Player::get_tendency_by_id)
+        .function("set_tendency_by_id",      &Player::set_tendency_by_id)
+        .function("get_hot_zone",            &Player::get_hot_zone)
+        .function("set_hot_zone",            &Player::set_hot_zone)
+        .function("get_sig_skill",           &Player::get_sig_skill)
+        .function("set_sig_skill",           &Player::set_sig_skill)
         // -- Tendencies (bit-packed) --
         .function("get_tendency_stepback_shot_3pt",  &Player::get_tendency_stepback_shot_3pt)
         .function("set_tendency_stepback_shot_3pt",  &Player::set_tendency_stepback_shot_3pt)

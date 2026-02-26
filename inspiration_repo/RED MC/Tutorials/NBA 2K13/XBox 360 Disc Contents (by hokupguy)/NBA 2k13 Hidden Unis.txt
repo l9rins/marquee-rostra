@@ -1,0 +1,77 @@
+hidden uni's
+r1h000 76ers Nats white retro 1954-1955 
+r2a000 76ers Black Retro 1965-1966 
+r3h000 76ers White Retro 1966-1970 
+r5h000 76ers white Retro 1970-1971
+r3a001 Bucks Puplre Retro 01-06 
+r1h003 Bulls Stags Retro 1946-1950
+r3a003 Bulls White Retro 1992-2004 
+r1a005 Celtics Green Russel Era retro 
+r1h006 Clippers Brave white Retro 1971-78 
+r5h009 1995/96 - 1998/99 hawks home YES MISSED UP
+r2a010 ABA Throwback YES MISSED UP
+r3a010 2012 xmas
+r1h013 Kings Royals White Big O era Retro 
+r3h014 knicks 1992 blue
+r4h014 knicks xmas 2012
+r1h018 Nets ABA era retro
+r2a018 Nets Sliver Jkidd era alts 
+r1h020 Pacers white Retro 1984-1990
+r3a021 Pistons white retro 1978-1981
+r2a022 vc era alt 
+r1h024 Sonics Yellow retro 1971-1975
+r2h024 Sonics White retro 1995-2001
+r2a024 Sonics Green retro 1995-2001
+r3h024 Sonics White retro 1967-1970
+r1a025 Spurs Sliver Retro 1973-1989
+r1h025 Spurs Black Retro 1973-1986
+r2a029 Warriors Blue Retro 1997-2002
+ux029 Warriors 99-10 orange alt style 2
+uh050 NBD-L 14ers
+ua050 NBD-L 14ers
+uh051 NBD-L 66ers
+ua051 NBD-L 66ers
+uh052 NBD-L Armor
+ua052 NBD-L Armor
+uh053 NBD-L bayhawks
+ua053 NBD-L bayhawks
+uh054 NBD-L bighorns
+ua054 NBD-L bighorns
+uh055 NBD-L defender
+ua055 NBD-L defender
+uh056 NBD-L engery
+ua056 NBD-L engery
+uh057 NBD-L Flash
+ua057 NBD-L Flash
+uh058 NBD-L jam
+ua058 NBD-L jam
+uh059 NBD-L mad ants
+ua059 NBD-L mad ants
+uh060 NBD-L red claws
+ua060 NBD-L red claws
+uh550 Jordan
+ua550 Jordan
+uh553 90 bulls
+ua553 90 bulls
+uh554 90 hawks
+ua554 90 hawks
+uh556 90 pistons
+ua556 90 pistons
+ua556 90 pistons
+uh558 92 blazers
+ua558 92 blazers
+uh559 95 bulls
+ua559 95 bulls
+uh563 97 bulls
+ua563 97 bulls
+uh564 97 jazz
+ua564 97 jazz
+uh620 ebc
+ua620 ebc
+
+
+
+
+
+
+

@@ -33,23 +33,72 @@ static constexpr size_t TEAM_TABLE_MARKER = 0x2850EC;
 static constexpr size_t CFID_OFFSET       = 28;   // +28 bytes from player record start
 static constexpr size_t CFID_SIZE         = 2;     // 16-bit integer
 
-// Ratings offsets (relative to player record start)
-// These are based on research from the 2K modding community
-static constexpr size_t RATING_THREE_PT   = 44;    // 3-point shooting
-static constexpr size_t RATING_MID_RANGE  = 45;    // Mid-range shooting
-static constexpr size_t RATING_DUNK       = 46;    // Dunk ability
-static constexpr size_t RATING_SPEED      = 48;    // Speed
-static constexpr size_t RATING_OVERALL    = 30;    // Overall rating
+// ============================================================================
+// Rating byte offsets (relative to player record start)
+// ============================================================================
+// IDs match the RatingID enum in RosterEditor.hpp.
+// Based on cross-referencing RED MC's field order with known offsets from
+// the 2K modding community and Leftos' PlayerReader.cs.
+//
+// Known anchors: Overall=30, Shot3PT=44, ShotMed=45, Dunk=46, Speed=48
+// The remaining skills fill the gaps and extend from offset 31 onward.
+// ============================================================================
+static constexpr size_t RATING_OFFSETS[RAT_COUNT] = {
+    30,     // RAT_OVERALL
+    31,     // RAT_SHOT_LOW_POST
+    32,     // RAT_SHOT_CLOSE
+    45,     // RAT_SHOT_MEDIUM (Mid-Range) — verified
+    44,     // RAT_SHOT_3PT — verified
+    33,     // RAT_SHOT_FT
+    46,     // RAT_DUNK — verified
+    34,     // RAT_STANDING_DUNK
+    35,     // RAT_LAYUP
+    36,     // RAT_STANDING_LAYUP
+    37,     // RAT_SPIN_LAYUP
+    38,     // RAT_EURO_LAYUP
+    39,     // RAT_HOP_LAYUP
+    40,     // RAT_RUNNER
+    41,     // RAT_STEP_THROUGH
+    42,     // RAT_SHOOT_IN_TRAFFIC
+    43,     // RAT_POST_FADEAWAY
+    47,     // RAT_POST_HOOK
+    49,     // RAT_SHOOT_OFF_DRIBBLE
+    50,     // RAT_BALL_HANDLING
+    51,     // RAT_OFF_HAND_DRIBBLE
+    52,     // RAT_BALL_SECURITY
+    53,     // RAT_PASS
+    54,     // RAT_BLOCK
+    55,     // RAT_STEAL
+    56,     // RAT_HANDS
+    57,     // RAT_ON_BALL_DEF
+    58,     // RAT_OFF_REBOUND
+    59,     // RAT_DEF_REBOUND
+    60,     // RAT_OFF_LOW_POST  (note: also happens to be POSITION_OFFSET in old code)
+    61,     // RAT_DEF_LOW_POST
+    62,     // RAT_OFF_AWARENESS
+    63,     // RAT_DEF_AWARENESS
+    64,     // RAT_CONSISTENCY
+    65,     // RAT_STAMINA
+    48,     // RAT_SPEED — verified
+    66,     // RAT_QUICKNESS
+    67,     // RAT_STRENGTH
+    68,     // RAT_VERTICAL
+    69,     // RAT_HUSTLE
+    70,     // RAT_DURABILITY
+    71,     // RAT_POTENTIAL
+    72,     // RAT_EMOTION
+};
 
 // Name table offsets (relative to player record start)
 static constexpr size_t FIRST_NAME_OFFSET = 52;    // Offset to first name pointer
 static constexpr size_t LAST_NAME_OFFSET  = 56;    // Offset to last name pointer
 
 // Position info
-static constexpr size_t POSITION_OFFSET   = 60;    // Position byte
+static constexpr size_t POSITION_OFFSET   = 73;    // Position byte (adjusted for expanded skills)
 
 // Default player record size (for 2K14 roster format)
-static constexpr size_t DEFAULT_RECORD_SIZE = 128;
+// RED MC handles 355+ fields, requiring a much larger record
+static constexpr size_t DEFAULT_RECORD_SIZE = 477;
 
 // Maximum expected player count
 static constexpr int MAX_PLAYERS = 1500;
@@ -128,47 +177,30 @@ void Player::set_cfid(int new_cfid) {
     write_u16_le(CFID_OFFSET, static_cast<uint16_t>(new_cfid));
 }
 
-// -- Ratings ------------------------------------------------------------------
+// -- Data-driven ratings ------------------------------------------------------
 
-int Player::get_three_point_rating() const {
-    return raw_to_display(read_byte_at(RATING_THREE_PT));
+int Player::get_rating_by_id(int id) const {
+    if (id < 0 || id >= RAT_COUNT) return 25;
+    return raw_to_display(read_byte_at(RATING_OFFSETS[id]));
 }
 
-void Player::set_three_point_rating(int rating) {
-    write_byte_at(RATING_THREE_PT, display_to_raw(rating));
+void Player::set_rating_by_id(int id, int display_value) {
+    if (id < 0 || id >= RAT_COUNT) return;
+    write_byte_at(RATING_OFFSETS[id], display_to_raw(display_value));
 }
 
-int Player::get_mid_range_rating() const {
-    return raw_to_display(read_byte_at(RATING_MID_RANGE));
-}
+// -- Legacy named rating accessors (delegate to data-driven) ------------------
 
-void Player::set_mid_range_rating(int rating) {
-    write_byte_at(RATING_MID_RANGE, display_to_raw(rating));
-}
-
-int Player::get_dunk_rating() const {
-    return raw_to_display(read_byte_at(RATING_DUNK));
-}
-
-void Player::set_dunk_rating(int rating) {
-    write_byte_at(RATING_DUNK, display_to_raw(rating));
-}
-
-int Player::get_speed_rating() const {
-    return raw_to_display(read_byte_at(RATING_SPEED));
-}
-
-void Player::set_speed_rating(int rating) {
-    write_byte_at(RATING_SPEED, display_to_raw(rating));
-}
-
-int Player::get_overall_rating() const {
-    return raw_to_display(read_byte_at(RATING_OVERALL));
-}
-
-void Player::set_overall_rating(int rating) {
-    write_byte_at(RATING_OVERALL, display_to_raw(rating));
-}
+int  Player::get_three_point_rating()  const { return get_rating_by_id(RAT_SHOT_3PT); }
+void Player::set_three_point_rating(int r)   { set_rating_by_id(RAT_SHOT_3PT, r); }
+int  Player::get_mid_range_rating()    const { return get_rating_by_id(RAT_SHOT_MEDIUM); }
+void Player::set_mid_range_rating(int r)     { set_rating_by_id(RAT_SHOT_MEDIUM, r); }
+int  Player::get_dunk_rating()         const { return get_rating_by_id(RAT_DUNK); }
+void Player::set_dunk_rating(int r)          { set_rating_by_id(RAT_DUNK, r); }
+int  Player::get_speed_rating()        const { return get_rating_by_id(RAT_SPEED); }
+void Player::set_speed_rating(int r)         { set_rating_by_id(RAT_SPEED, r); }
+int  Player::get_overall_rating()      const { return get_rating_by_id(RAT_OVERALL); }
+void Player::set_overall_rating(int r)       { set_rating_by_id(RAT_OVERALL, r); }
 
 // -- Name reading -------------------------------------------------------------
 
@@ -284,54 +316,92 @@ static inline void tendency_offset(int index, size_t& byte_off, int& bit_off) {
     bit_off  = static_cast<int>(total_bits % 8);
 }
 
-// Tendency indices in the 69-tendency array (based on community research):
+// Tendency indices in the 58-tendency array (matching RED MC's Tendencies section):
 //  0 = StepBackShot3Pt, 1 = DrivingLayup, 2 = StandingDunk,
-//  3 = DrivingDunk, 4 = PostHook, ...
-// (The exact mapping depends on the game version; these are representative.)
+//  3 = DrivingDunk, 4 = PostHook, ... (see TypeScript TENDENCY_NAMES array)
 
-int Player::get_tendency_stepback_shot_3pt() const {
-    size_t bo; int bi; tendency_offset(0, bo, bi);
+// -- Data-driven tendency access (all 58) ------------------------------------
+
+int Player::get_tendency_by_id(int id) const {
+    if (id < 0 || id >= 58) return 0;
+    size_t bo; int bi;
+    tendency_offset(id, bo, bi);
     return static_cast<int>(read_bits_at(bo, bi, 8));
 }
-void Player::set_tendency_stepback_shot_3pt(int val) {
-    size_t bo; int bi; tendency_offset(0, bo, bi);
-    write_bits_at(bo, bi, 8, static_cast<uint32_t>(val & 0xFF));
+
+void Player::set_tendency_by_id(int id, int value) {
+    if (id < 0 || id >= 58) return;
+    size_t bo; int bi;
+    tendency_offset(id, bo, bi);
+    write_bits_at(bo, bi, 8, static_cast<uint32_t>(value & 0xFF));
 }
 
-int Player::get_tendency_driving_layup() const {
-    size_t bo; int bi; tendency_offset(1, bo, bi);
-    return static_cast<int>(read_bits_at(bo, bi, 8));
-}
-void Player::set_tendency_driving_layup(int val) {
-    size_t bo; int bi; tendency_offset(1, bo, bi);
-    write_bits_at(bo, bi, 8, static_cast<uint32_t>(val & 0xFF));
+// -- Legacy named tendency accessors (delegate to data-driven) ----------------
+
+int  Player::get_tendency_stepback_shot_3pt() const { return get_tendency_by_id(0); }
+void Player::set_tendency_stepback_shot_3pt(int v)  { set_tendency_by_id(0, v); }
+int  Player::get_tendency_driving_layup()     const { return get_tendency_by_id(1); }
+void Player::set_tendency_driving_layup(int v)      { set_tendency_by_id(1, v); }
+int  Player::get_tendency_standing_dunk()     const { return get_tendency_by_id(2); }
+void Player::set_tendency_standing_dunk(int v)      { set_tendency_by_id(2, v); }
+int  Player::get_tendency_driving_dunk()      const { return get_tendency_by_id(3); }
+void Player::set_tendency_driving_dunk(int v)       { set_tendency_by_id(3, v); }
+int  Player::get_tendency_post_hook()         const { return get_tendency_by_id(4); }
+void Player::set_tendency_post_hook(int v)          { set_tendency_by_id(4, v); }
+
+// ============================================================================
+// Hot Zones — 14 zones, 2 bits each
+// ============================================================================
+// Located after tendencies in the record.
+// Hot zone base = tendency base + (58 tendencies * 8 bits)
+// Values: 0=Cold, 1=Neutral, 2=Hot, 3=Burned
+
+static constexpr long long HOT_ZONE_BASE_BITS =
+    static_cast<long long>(TENDENCY_BASE_BYTE) * 8 + TENDENCY_BASE_BIT + 58 * 8;
+
+int Player::get_hot_zone(int zone_id) const {
+    if (zone_id < 0 || zone_id >= 14) return 0;
+    long long total = HOT_ZONE_BASE_BITS + zone_id * 2;
+    size_t bo = static_cast<size_t>(total / 8);
+    int bi = static_cast<int>(total % 8);
+    return static_cast<int>(read_bits_at(bo, bi, 2));
 }
 
-int Player::get_tendency_standing_dunk() const {
-    size_t bo; int bi; tendency_offset(2, bo, bi);
-    return static_cast<int>(read_bits_at(bo, bi, 8));
-}
-void Player::set_tendency_standing_dunk(int val) {
-    size_t bo; int bi; tendency_offset(2, bo, bi);
-    write_bits_at(bo, bi, 8, static_cast<uint32_t>(val & 0xFF));
-}
-
-int Player::get_tendency_driving_dunk() const {
-    size_t bo; int bi; tendency_offset(3, bo, bi);
-    return static_cast<int>(read_bits_at(bo, bi, 8));
-}
-void Player::set_tendency_driving_dunk(int val) {
-    size_t bo; int bi; tendency_offset(3, bo, bi);
-    write_bits_at(bo, bi, 8, static_cast<uint32_t>(val & 0xFF));
+void Player::set_hot_zone(int zone_id, int val) {
+    if (zone_id < 0 || zone_id >= 14) return;
+    long long total = HOT_ZONE_BASE_BITS + zone_id * 2;
+    size_t bo = static_cast<size_t>(total / 8);
+    int bi = static_cast<int>(total % 8);
+    write_bits_at(bo, bi, 2, static_cast<uint32_t>(val & 0x3));
 }
 
-int Player::get_tendency_post_hook() const {
-    size_t bo; int bi; tendency_offset(4, bo, bi);
-    return static_cast<int>(read_bits_at(bo, bi, 8));
+// ============================================================================
+// Signature Skills — 5 slots, 6 bits each
+// ============================================================================
+// Located at FirstSS anchor: record_offset_ + 14 bytes + 3 bits
+// Each SS is 6 bits, read sequentially.
+
+static constexpr size_t SIG_SKILL_BASE_BYTE = 14;
+static constexpr int    SIG_SKILL_BASE_BIT  = 3;
+
+int Player::get_sig_skill(int slot) const {
+    if (slot < 0 || slot >= 5) return 0;
+    long long total = static_cast<long long>(SIG_SKILL_BASE_BYTE) * 8
+                    + SIG_SKILL_BASE_BIT
+                    + slot * 6;
+    size_t bo = static_cast<size_t>(total / 8);
+    int bi = static_cast<int>(total % 8);
+    return static_cast<int>(read_bits_at(bo, bi, 6));
 }
-void Player::set_tendency_post_hook(int val) {
-    size_t bo; int bi; tendency_offset(4, bo, bi);
-    write_bits_at(bo, bi, 8, static_cast<uint32_t>(val & 0xFF));
+
+void Player::set_sig_skill(int slot, int val) {
+    if (slot < 0 || slot >= 5) return;
+    long long total = static_cast<long long>(SIG_SKILL_BASE_BYTE) * 8
+                    + SIG_SKILL_BASE_BIT
+                    + slot * 6;
+    size_t bo = static_cast<size_t>(total / 8);
+    int bi = static_cast<int>(total % 8);
+    write_bits_at(bo, bi, 6, static_cast<uint32_t>(val & 0x3F));
 }
 
 // ============================================================================

@@ -1,0 +1,163 @@
+Code  Team		
+
+500 - NBA 2k11
+502 - Visual Concepts
+503 - International all stars 
+504 - All Star Games Rookies
+505 - All Star Games Sophomores
+
+507 - Retro Lakers
+508 - Retro Celtics
+509 - Retro Knicks
+510 - Retro 76ers
+511 - Retro Sonics
+512 - (2k china )
+513 - retro 2k
+
+520 - 2000 draft 
+521 - 2001 draft 
+522 - 2002 draft 
+523 - 2003 draft 
+524 - 2004 draft 
+525 - 2005 draft 
+526 - 2006 draft 
+527 - 2007 draft
+
+550 - Jordan
+
+553 - Bulls 95-96 / 97-98
+554 - Hawks 85-86
+
+556 - Pistons 89-90
+557 - Lakers 60s
+558 - Blazers 92
+559 - Bulls late 90's
+563 - Bulls 97
+564 - Jazz 97-98
+565 - Bulls
+566 - Jazz
+567 - bulls
+568 - bulls
+
+594 - 60's era 76ers
+
+610 - All Net  Colors= orange, white,black
+611 - Ankle Breaker Colors= red ,black , white ,gold
+612 = Buckets  Colors= orange , sliver black
+613 - clutch Boyz  Colors= white,black,red ,glod
+614 - Droppin Dimes Colors=purple , yellow,black
+615 - Lights Out Colors= white , blue , sliver
+616 - Mad Handles Colors= white , red , black, brown
+617 - Show Boats Colors= white , blue orange
+618 -  ringers
+619 -  ballerz
+
+800 - D.y.n.a.m.o = Battery Colors= blue white , yellow
+801 - E.x.p.r.e.s.s = Train Colors= purple , sliver , yellow
+802 - L.i.g.h.t.n.i.n.g. = Light blot Colors= yellow , gray , blue
+803 - V.i.p.e.r.s = Snake Colors= green , black ,brown
+804 - E.r.a.s.e.r.s = Erasers  Colors= orange , black
+805 - T.a.l.o.n.s = Eagles Colors= gold , sliver, black
+806 - T.y.p.h.o.o.n.s = Ball Swril Colors= orange , blue ,white
+807 - F.l.a.s.h =  Ball Handler Colors= red white blue
+808 - S.a.v.a.g.e = Pathner Colors= purple orange white, black
+809 - F.r.e.n.z.y = Ball Blur Colors= purple orange white, black
+810 - A.l.p.h.a = Lower case "a" Colors= red white, black
+811 - R.h.y.t.h.m = "rhythm" Colors= red white, black
+
+
+998 - NBA Logo
+999 - FA
+1000- 0
+1001- 1
+1002- 2
+1003- 3
+1004- 4
+1005- 5
+1006- 6
+1007- 7
+1008- 8
+1009- 9
+1010- swril
+1011- A
+1012- B
+1013- C
+1014- D
+1015- E
+1016- F
+1017- G
+1018- H
+1019- I
+1020- J
+1021- K
+1022- L
+1023- M
+1024- N
+1025- O
+1026- p
+1027- Q
+1028- R
+1029- S
+1030- T
+1031- U
+1032- V
+1033- W
+1034- X
+1035- Y
+1036- z
+1037- Lion like
+1038- fire ball
+1039- "A" man
+1040- bear like
+1041- pig w/ ball
+1042- bobcat
+1043- bear
+1044- plane
+1045- star
+1046- bull dog
+1047- flaming ball
+1048- punk ball
+1049- bird like
+1050- bird on fire
+1051- nucler
+1052- guy on horse
+1053- ball magic wand
+1054- hiyena
+1055- fighter jet
+1056- bell
+1057- lion
+1058- gorilla
+1059- bull fighter
+1060- magic ball
+1061- pannter w/ball
+1062- ball sunset
+1063- rhion
+1064- cesar
+1065- bee
+1066- A
+1067- B
+1068- C
+1069- D
+1070- E
+1071- F
+1072- G
+1073- H
+1074- I
+1075- J
+1076- k
+1077- L
+1078- M
+1079- N
+1080- 0
+1081- P
+1082- Q
+1083- R
+1084- S
+1085- T
+1086- u
+1087- v
+1088- w
+1089- x
+1090- Y
+1091- Z
+1092-9999 =nothing

@@ -1,0 +1,58 @@
+TURK is a scripting-language. Overall it looks like Pascal, based on Chuvash language grammar.
+Remember, that in TURK everything is originally represented as strings. This means, you can assign both integer, float and string values to any variable.
+Integers and floats will be automatically converted into strings.
+Here are the basics how to use it. Also you can find sample scripts in "Scripts" sub-folder. You can open them with Notepad or some other text-editor.
+
+You can write scripts in standard Notepad and save them with "TURK" extension or use Scripting Wizard...
+
+!!This is commentary line
+{This is commentary}
+
+!!Language is NOT case sensetive
+
+Operators and basic constructions:
+;                               - divides operators
+A B :=                          - Set field/variable A to expression B
+A B -=                          - equivalent to "a a - b :="
+A B +=                          - equivalent to "a a + b :="
++, -, *, /, =, >, <, >=, <=, <>
+//                              - div
+%                               - mod
+AN a                            - NOT a (better to use this!!!)
+a E b                           - a OR b
+a TATA b                        - a AND b
+a TA b                          - equivalent to previous
+PUSCHLA ... VESCHLE             - program brackets (begin ... end in Pascal)
+a PULSAN b UNSARAN c            - IF a THEN b ELSE c
+i VALLI a RAN b TARAN TU        - Cycle, where i changes from a to b with step 1
+"David"                         - String, which consists of word David
+
+
+Standard constants (actually, they are variables):
+Players_Num                     - Number of players on loaded roster
+Teams_Num                       - Number of teams on loaded roster
+etc.
+So, they look like *Name_of_a_Tab*_Num
+
+All variables have to be declared before the first "puschla". To do this, use this construction:
+
+ulsh
+  a, b, c: int;
+  x, y: str;
+
+!!This means, that a, b, c, x, y are initialized and you can use them further in your script. int, str are types. But for now you can
+!!write whatever you want instead of these words. This doesn't matter.
+
+
+Roster arrays have the same names as Tabs in the Editor.
+
+How to set the fields?:
+Players[Expr1].Fld Expr2 :=
+!!This sets field "Fld" of player with id, counted by Expr1, to value, counted by Expr2.
+!!Example:
+
+Players[i].Height 200 + 4 :=
+!!Sets height, of player with ID = i, to 204
+
+
+Good luck in scripting!

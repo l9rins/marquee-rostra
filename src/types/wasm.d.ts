@@ -26,6 +26,16 @@ export interface WasmPlayer {
 
   get_position(): number;
 
+  // -- Data-driven (all ratings/tendencies) --
+  get_rating_by_id(id: number): number;
+  set_rating_by_id(id: number, displayValue: number): void;
+  get_tendency_by_id(id: number): number;
+  set_tendency_by_id(id: number, value: number): void;
+  get_hot_zone(zoneId: number): number;
+  set_hot_zone(zoneId: number, value: number): void;
+  get_sig_skill(slot: number): number;
+  set_sig_skill(slot: number, value: number): void;
+
   // -- Tendencies (bit-packed) --
   get_tendency_stepback_shot_3pt(): number;
   set_tendency_stepback_shot_3pt(val: number): void;
