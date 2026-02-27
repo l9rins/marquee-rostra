@@ -48,21 +48,38 @@ export interface WasmPlayer {
   get_tendency_post_hook(): number;
   set_tendency_post_hook(val: number): void;
 
-  // -- Gear (mixed bit-widths) --
-  get_gear_accessory_flag(): number;
-  set_gear_accessory_flag(val: number): void;
-  get_gear_elbow_pad(): number;
-  set_gear_elbow_pad(val: number): void;
-  get_gear_wrist_band(): number;
-  set_gear_wrist_band(val: number): void;
-  get_gear_headband(): number;
-  set_gear_headband(val: number): void;
-  get_gear_socks(): number;
-  set_gear_socks(val: number): void;
+  // -- Gear (data-driven) --
+  get_gear_by_id(id: number): number;
+  set_gear_by_id(id: number, val: number): void;
 
   // -- Signatures (byte-aligned) --
   get_animation_by_id(id: number): number;
   set_animation_by_id(id: number, val: number): void;
+
+  // -- Vitals (data-driven) --
+  get_vital_by_id(id: number): number;
+  set_vital_by_id(id: number, val: number): void;
+
+  /** Embind objects must be deleted to prevent memory leaks */
+  delete(): void;
+}
+
+export interface WasmTeam {
+  get_id(): number;
+  get_name(): string;
+  get_city(): string;
+  get_abbr(): string;
+  set_name(name: string): void;
+  set_city(city: string): void;
+  set_abbr(abbr: string): void;
+
+  get_color1(): number;
+  get_color2(): number;
+  set_color1(argb: number): void;
+  set_color2(argb: number): void;
+
+  get_roster_player_id(index: number): number;
+  set_roster_player_id(index: number, player_id: number): void;
 
   /** Embind objects must be deleted to prevent memory leaks */
   delete(): void;
@@ -72,6 +89,8 @@ export interface WasmRosterEditor {
   init(buffer_ptr: number, buffer_length: number): void;
   get_player_count(): number;
   get_player(index: number): WasmPlayer;
+  get_team_count(): number;
+  get_team(index: number): WasmTeam;
   save_and_recalculate_checksum(): void;
   get_buffer_ptr(): number;
   get_buffer_length(): number;

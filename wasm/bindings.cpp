@@ -51,20 +51,33 @@ EMSCRIPTEN_BINDINGS(roster_editor_module) {
         .function("set_tendency_driving_dunk",       &Player::set_tendency_driving_dunk)
         .function("get_tendency_post_hook",          &Player::get_tendency_post_hook)
         .function("set_tendency_post_hook",          &Player::set_tendency_post_hook)
-        // -- Gear (mixed bit-widths) --
-        .function("get_gear_accessory_flag",  &Player::get_gear_accessory_flag)
-        .function("set_gear_accessory_flag",  &Player::set_gear_accessory_flag)
-        .function("get_gear_elbow_pad",       &Player::get_gear_elbow_pad)
-        .function("set_gear_elbow_pad",       &Player::set_gear_elbow_pad)
-        .function("get_gear_wrist_band",      &Player::get_gear_wrist_band)
-        .function("set_gear_wrist_band",      &Player::set_gear_wrist_band)
-        .function("get_gear_headband",        &Player::get_gear_headband)
-        .function("set_gear_headband",        &Player::set_gear_headband)
-        .function("get_gear_socks",           &Player::get_gear_socks)
-        .function("set_gear_socks",           &Player::set_gear_socks)
+        // -- Gear (data-driven) --
+        .function("get_gear_by_id",           &Player::get_gear_by_id)
+        .function("set_gear_by_id",           &Player::set_gear_by_id)
         // -- Signatures (byte-aligned) --
         .function("get_animation_by_id",      &Player::get_animation_by_id)
         .function("set_animation_by_id",      &Player::set_animation_by_id)
+        // -- Vitals (data-driven) --
+        .function("get_vital_by_id",          &Player::get_vital_by_id)
+        .function("set_vital_by_id",          &Player::set_vital_by_id)
+        .function("set_vital_by_id",          &Player::set_vital_by_id)
+        ;
+
+    class_<Team>("Team")
+        .constructor<>()
+        .function("get_id",                   &Team::get_id)
+        .function("get_name",                 &Team::get_name)
+        .function("get_city",                 &Team::get_city)
+        .function("get_abbr",                 &Team::get_abbr)
+        .function("set_name",                 &Team::set_name)
+        .function("set_city",                 &Team::set_city)
+        .function("set_abbr",                 &Team::set_abbr)
+        .function("get_color1",               &Team::get_color1)
+        .function("get_color2",               &Team::get_color2)
+        .function("set_color1",               &Team::set_color1)
+        .function("set_color2",               &Team::set_color2)
+        .function("get_roster_player_id",     &Team::get_roster_player_id)
+        .function("set_roster_player_id",     &Team::set_roster_player_id)
         ;
 
     class_<RosterEditor>("RosterEditor")
@@ -72,6 +85,8 @@ EMSCRIPTEN_BINDINGS(roster_editor_module) {
         .function("init",                          &RosterEditor::init)
         .function("get_player_count",              &RosterEditor::get_player_count)
         .function("get_player",                    &RosterEditor::get_player)
+        .function("get_team_count",                &RosterEditor::get_team_count)
+        .function("get_team",                      &RosterEditor::get_team)
         .function("save_and_recalculate_checksum", &RosterEditor::save_and_recalculate_checksum)
         .function("get_buffer_ptr",                &RosterEditor::get_buffer_ptr)
         .function("get_buffer_length",             &RosterEditor::get_buffer_length)

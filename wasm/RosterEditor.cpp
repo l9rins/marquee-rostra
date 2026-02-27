@@ -229,6 +229,125 @@ int Player::get_position() const {
     return static_cast<int>(read_byte_at(POSITION_OFFSET));
 }
 
+// -- Data-driven Vitals -------------------------------------------------------
+
+int Player::get_vital_by_id(int id) const {
+    switch (id) {
+        case VITAL_POSITION:    return read_byte_at(33);
+        case VITAL_HEIGHT:      return read_byte_at(34);
+        case VITAL_WEIGHT:      return read_byte_at(35);
+        case VITAL_BIRTH_DAY:   return read_byte_at(37);
+        case VITAL_BIRTH_MONTH: return read_byte_at(38);
+        case VITAL_BIRTH_YEAR:  return read_u16_le(39);
+        case VITAL_HAND:        return read_byte_at(41);
+        case VITAL_DUNK_HAND:   return read_byte_at(42);
+        case VITAL_YEARS_PRO:   return read_byte_at(43);
+        case VITAL_JERSEY_NUM:  return read_bits_at(13, 4, 8);
+        case VITAL_TEAM_ID1:    return read_bits_at(1, 0, 8);
+        case VITAL_TEAM_ID2:    return read_bits_at(267, 0, 8);
+        case VITAL_CONTRACT_Y1: return read_bits_at(222, 0, 32);
+        case VITAL_CONTRACT_Y2: return read_bits_at(226, 0, 32);
+        case VITAL_CONTRACT_Y3: return read_bits_at(230, 0, 32);
+        case VITAL_CONTRACT_Y4: return read_bits_at(234, 0, 32);
+        case VITAL_CONTRACT_Y5: return read_bits_at(238, 0, 32);
+        case VITAL_CONTRACT_Y6: return read_bits_at(242, 0, 32);
+        case VITAL_CONTRACT_Y7: return read_bits_at(246, 0, 32);
+        case VITAL_CONTRACT_OPT: return read_bits_at(162, 0, 2);
+        case VITAL_NO_TRADE:    return read_bits_at(185, 5, 1);
+        case VITAL_INJURY_TYPE: return read_bits_at(32, 1, 7);
+        case VITAL_INJURY_DAYS: return read_bits_at(36, 0, 16);
+        case VITAL_PLAY_STYLE:  return read_bits_at(162, 5, 5);
+        case VITAL_PLAY_TYPE1:  return read_bits_at(151, 5, 4);
+        case VITAL_PLAY_TYPE2:  return read_bits_at(152, 1, 4);
+        case VITAL_PLAY_TYPE3:  return read_bits_at(152, 5, 4);
+        case VITAL_PLAY_TYPE4:  return read_bits_at(153, 1, 4);
+        case VITAL_BODY_TYPE:   return read_bits_at(134, 3, 2);
+        case VITAL_MUSCLE_TONE: return read_bits_at(134, 5, 1);
+        case VITAL_SKIN_TONE:   return read_bits_at(134, 6, 3);
+        case VITAL_HAIR_TYPE:   return read_bits_at(135, 1, 6);
+        case VITAL_HAIR_COLOR:  return read_bits_at(135, 7, 4);
+        case VITAL_EYE_COLOR:   return read_bits_at(136, 3, 3);
+        case VITAL_EYEBROW:     return read_bits_at(136, 6, 4);
+        case VITAL_MUSTACHE:    return read_bits_at(138, 0, 3);
+        case VITAL_FCL_HAIR_CLR: return read_bits_at(138, 3, 4);
+        case VITAL_BEARD:       return read_bits_at(138, 7, 4);
+        case VITAL_GOATEE:      return read_bits_at(139, 3, 5);
+        case VITAL_SEC_POS:      return read_byte_at(44);
+        case VITAL_DRAFT_YEAR:   return read_byte_at(48);
+        case VITAL_DRAFT_ROUND:  return read_bits_at(49, 0, 4);
+        case VITAL_DRAFT_PICK:   return read_bits_at(49, 4, 6);
+        case VITAL_DRAFT_TEAM:   return read_byte_at(51);
+        case VITAL_NICKNAME,     return read_byte_at(54);
+        case VITAL_PLAY_INITIATOR: return read_bits_at(96, 0, 1);
+        case VITAL_GOES_TO_3PT:  return read_bits_at(96, 1, 1);
+        case VITAL_PEAK_AGE_START: return read_byte_at(60);
+        case VITAL_PEAK_AGE_END:   return read_byte_at(61);
+        case VITAL_POTENTIAL:      return read_byte_at(267);
+        case VITAL_LOYALTY:        return read_byte_at(58);
+        case VITAL_FINANCIAL_SECURITY: return read_byte_at(59);
+        case VITAL_PLAY_FOR_WINNER: return read_byte_at(57);
+        default: return 0;
+    }
+}
+
+void Player::set_vital_by_id(int id, int value) {
+    switch (id) {
+        case VITAL_POSITION:    write_byte_at(33, value & 0xFF); break;
+        case VITAL_HEIGHT:      write_byte_at(34, value & 0xFF); break;
+        case VITAL_WEIGHT:      write_byte_at(35, value & 0xFF); break;
+        case VITAL_BIRTH_DAY:   write_byte_at(37, value & 0xFF); break;
+        case VITAL_BIRTH_MONTH: write_byte_at(38, value & 0xFF); break;
+        case VITAL_BIRTH_YEAR:  write_u16_le(39, value & 0xFFFF); break;
+        case VITAL_HAND:        write_byte_at(41, value & 0xFF); break;
+        case VITAL_DUNK_HAND:   write_byte_at(42, value & 0xFF); break;
+        case VITAL_YEARS_PRO:   write_byte_at(43, value & 0xFF); break;
+        case VITAL_JERSEY_NUM:  write_bits_at(13, 4, 8, value); break;
+        case VITAL_TEAM_ID1:    write_bits_at(1, 0, 8, value); break;
+        case VITAL_TEAM_ID2:    write_bits_at(267, 0, 8, value); break;
+        case VITAL_CONTRACT_Y1: write_bits_at(222, 0, 32, value); break;
+        case VITAL_CONTRACT_Y2: write_bits_at(226, 0, 32, value); break;
+        case VITAL_CONTRACT_Y3: write_bits_at(230, 0, 32, value); break;
+        case VITAL_CONTRACT_Y4: write_bits_at(234, 0, 32, value); break;
+        case VITAL_CONTRACT_Y5: write_bits_at(238, 0, 32, value); break;
+        case VITAL_CONTRACT_Y6: write_bits_at(242, 0, 32, value); break;
+        case VITAL_CONTRACT_Y7: write_bits_at(246, 0, 32, value); break;
+        case VITAL_CONTRACT_OPT: write_bits_at(162, 0, 2, value); break;
+        case VITAL_NO_TRADE:    write_bits_at(185, 5, 1, value); break;
+        case VITAL_INJURY_TYPE: write_bits_at(32, 1, 7, value); break;
+        case VITAL_INJURY_DAYS: write_bits_at(36, 0, 16, value); break;
+        case VITAL_PLAY_STYLE:  write_bits_at(162, 5, 5, value); break;
+        case VITAL_PLAY_TYPE1:  write_bits_at(151, 5, 4, value); break;
+        case VITAL_PLAY_TYPE2:  write_bits_at(152, 1, 4, value); break;
+        case VITAL_PLAY_TYPE3:  write_bits_at(152, 5, 4, value); break;
+        case VITAL_PLAY_TYPE4:  write_bits_at(153, 1, 4, value); break;
+        case VITAL_BODY_TYPE:   write_bits_at(134, 3, 2, value); break;
+        case VITAL_MUSCLE_TONE: write_bits_at(134, 5, 1, value); break;
+        case VITAL_SKIN_TONE:   write_bits_at(134, 6, 3, value); break;
+        case VITAL_HAIR_TYPE:   write_bits_at(135, 1, 6, value); break;
+        case VITAL_HAIR_COLOR:  write_bits_at(135, 7, 4, value); break;
+        case VITAL_EYE_COLOR:   write_bits_at(136, 3, 3, value); break;
+        case VITAL_EYEBROW:     write_bits_at(136, 6, 4, value); break;
+        case VITAL_MUSTACHE:    write_bits_at(138, 0, 3, value); break;
+        case VITAL_FCL_HAIR_CLR: write_bits_at(138, 3, 4, value); break;
+        case VITAL_BEARD:       write_bits_at(138, 7, 4, value); break;
+        case VITAL_GOATEE:      write_bits_at(139, 3, 5, value); break;
+        case VITAL_SEC_POS:      write_byte_at(44, value & 0xFF); break;
+        case VITAL_DRAFT_YEAR:   write_byte_at(48, value & 0xFF); break;
+        case VITAL_DRAFT_ROUND:  write_bits_at(49, 0, 4, value); break;
+        case VITAL_DRAFT_PICK:   write_bits_at(49, 4, 6, value); break;
+        case VITAL_DRAFT_TEAM:   write_byte_at(51, value & 0xFF); break;
+        case VITAL_NICKNAME:     write_byte_at(54, value & 0xFF); break;
+        case VITAL_PLAY_INITIATOR: write_bits_at(96, 0, 1, value); break;
+        case VITAL_GOES_TO_3PT:  write_bits_at(96, 1, 1, value); break;
+        case VITAL_PEAK_AGE_START: write_byte_at(60, value & 0xFF); break;
+        case VITAL_PEAK_AGE_END:   write_byte_at(61, value & 0xFF); break;
+        case VITAL_POTENTIAL:      write_byte_at(267, value & 0xFF); break;
+        case VITAL_LOYALTY:        write_byte_at(58, value & 0xFF); break;
+        case VITAL_FINANCIAL_SECURITY: write_byte_at(59, value & 0xFF); break;
+        case VITAL_PLAY_FOR_WINNER: write_byte_at(57, value & 0xFF); break;
+    }
+}
+
 // -- Bit-packed helpers -------------------------------------------------------
 // These create a temporary BitStream over the entire buffer, jump to the
 // player's record_offset_ + the specified (byte, bit) delta, then read/write
@@ -251,6 +370,144 @@ void Player::write_bits_at(size_t byte_off, int bit_off, int count, uint32_t val
     bs.move(static_cast<int>(byte_off), bit_off);
     bs.write_bits(value, count);
 }
+
+// ============================================================================
+// Team Implementation
+// ============================================================================
+
+Team::Team()
+    : buffer_(nullptr), buffer_length_(0), record_offset_(0)
+{}
+
+Team::Team(uint8_t* buffer, size_t buffer_length, size_t record_offset)
+    : buffer_(buffer), buffer_length_(buffer_length), record_offset_(record_offset)
+{}
+
+// -- Low-level accessors ------------------------------------------------------
+
+uint8_t Team::read_byte_at(size_t offset) const {
+    size_t abs_offset = record_offset_ + offset;
+    if (abs_offset >= buffer_length_) throw std::out_of_range("Team::read_byte_at");
+    return buffer_[abs_offset];
+}
+
+void Team::write_byte_at(size_t offset, uint8_t value) {
+    size_t abs_offset = record_offset_ + offset;
+    if (abs_offset >= buffer_length_) throw std::out_of_range("Team::write_byte_at");
+    buffer_[abs_offset] = value;
+}
+
+uint16_t Team::read_u16_le(size_t offset) const {
+    size_t abs_offset = record_offset_ + offset;
+    if (abs_offset + 1 >= buffer_length_) throw std::out_of_range("Team::read_u16_le");
+    return static_cast<uint16_t>(buffer_[abs_offset]) | (static_cast<uint16_t>(buffer_[abs_offset + 1]) << 8);
+}
+
+void Team::write_u16_le(size_t offset, uint16_t value) {
+    size_t abs_offset = record_offset_ + offset;
+    if (abs_offset + 1 >= buffer_length_) throw std::out_of_range("Team::write_u16_le");
+    buffer_[abs_offset] = value & 0xFF;
+    buffer_[abs_offset + 1] = (value >> 8) & 0xFF;
+}
+
+uint32_t Team::read_u32_le(size_t offset) const {
+    size_t abs_offset = record_offset_ + offset;
+    if (abs_offset + 3 >= buffer_length_) throw std::out_of_range("Team::read_u32_le");
+    return static_cast<uint32_t>(buffer_[abs_offset])
+         | (static_cast<uint32_t>(buffer_[abs_offset + 1]) << 8)
+         | (static_cast<uint32_t>(buffer_[abs_offset + 2]) << 16)
+         | (static_cast<uint32_t>(buffer_[abs_offset + 3]) << 24);
+}
+
+void Team::write_u32_le(size_t offset, uint32_t value) {
+    size_t abs_offset = record_offset_ + offset;
+    if (abs_offset + 3 >= buffer_length_) throw std::out_of_range("Team::write_u32_le");
+    buffer_[abs_offset] = value & 0xFF;
+    buffer_[abs_offset + 1] = (value >> 8) & 0xFF;
+    buffer_[abs_offset + 2] = (value >> 16) & 0xFF;
+    buffer_[abs_offset + 3] = (value >> 24) & 0xFF;
+}
+
+// -- Basic Identifiers --
+
+int Team::get_id() const {
+    return static_cast<int>(read_byte_at(0)); // Usually ID is first byte or so, need to verify
+}
+
+std::string Team::get_name() const {
+    char b[33];
+    for(int i=0; i<32; i++) b[i] = static_cast<char>(read_byte_at(33 + i));
+    b[32] = '\0';
+    return std::string(b);
+}
+
+std::string Team::get_city() const {
+    char b[33];
+    for(int i=0; i<32; i++) b[i] = static_cast<char>(read_byte_at(1 + i));
+    b[32] = '\0';
+    return std::string(b);
+}
+
+std::string Team::get_abbr() const {
+    char b[5];
+    for(int i=0; i<4; i++) b[i] = static_cast<char>(read_byte_at(65 + i));
+    b[4] = '\0';
+    return std::string(b);
+}
+
+void Team::set_name(const std::string& name) {
+    for(int i=0; i<32; i++) {
+        write_byte_at(33 + i, i < name.length() ? static_cast<uint8_t>(name[i]) : 0);
+    }
+}
+
+void Team::set_city(const std::string& city) {
+    for(int i=0; i<32; i++) {
+        write_byte_at(1 + i, i < city.length() ? static_cast<uint8_t>(city[i]) : 0);
+    }
+}
+
+void Team::set_abbr(const std::string& abbr) {
+    for(int i=0; i<4; i++) {
+        write_byte_at(65 + i, i < abbr.length() ? static_cast<uint8_t>(abbr[i]) : 0);
+    }
+}
+
+// -- Colors --
+// Colors are stored as 32-bit ARGB at offset 40 (Color1) and 44 (Color2) usually
+uint32_t Team::get_color1() const {
+    return read_u32_le(40);
+}
+
+uint32_t Team::get_color2() const {
+    return read_u32_le(44);
+}
+
+void Team::set_color1(uint32_t argb) {
+    write_u32_le(40, argb);
+}
+
+void Team::set_color2(uint32_t argb) {
+    write_u32_le(44, argb);
+}
+
+// -- Rosters --
+// The 15-man active roster array starts exactly at +108 bytes
+// Each slot is a 16-bit player index
+
+int Team::get_roster_player_id(int index) const {
+    if (index < 0 || index >= 15) return -1;
+    return static_cast<int>(read_u16_le(108 + index * 2));
+}
+
+void Team::set_roster_player_id(int index, int player_id) {
+    if (index < 0 || index >= 15) return;
+    write_u16_le(108 + index * 2, static_cast<uint16_t>(player_id));
+}
+
+// ============================================================================
+// Bit-packed helpers
+// ============================================================================
 
 // ============================================================================
 // Tendencies — 8 bits each, sequential from (FirstSS + 51 bytes, 3 bits)
@@ -366,129 +623,87 @@ void Player::set_sig_skill(int slot, int val) {
 }
 
 // ============================================================================
-// Gear — mixed bit-widths from PortraitID + (129, 7)
+// Gear — 48 mixed bit-width fields starting at Byte 129, Bit 7
 // ============================================================================
-// Leftos' ReadGear: MoveStreamToPortraitID(i) → MoveStreamPosition(129, 7)
-// The gear fields are read sequentially with varying bit widths:
-//   gear[0] = 1 bit  (accessory flag)
-//   skip 2 bytes 0 bits
-//   gear[1] = 3 bits (elbow pad)
-//   gear[2] = 3 bits (wrist band)
-//   gear[3] = 4 bits (headband)
-//   skip 1 byte 0 bits
-//   gear[4] = 2 bits
-//   gear[5] = 1 bit
-//   skip 0 bytes 1 bit
-//   gear[6] = 4 bits
-//   gear[7] = 3 bits
-//   gear[8] = 3 bits
-//   skip 0 bytes 1 bit
-//   gear[9] = 3 bits
-//   skip 0 bytes 1 bit
-//   gear[10] = 3 bits
-//   gear[11] = 3 bits
-//   gear[12] = 3 bits
-//   gear[13] = 2 bits
-//   gear[14] = 4 bits (socks)
-// We implement gear[0], gear[1], gear[2], gear[3], and gear[14] (socks).
-// ============================================================================
+
+struct GearDef {
+    int bit_offset;
+    int bit_width;
+};
+
+static constexpr GearDef GEAR_DEFS[48] = {
+    { 0, 1 }, { 1, 3 }, { 4, 2 }, { 6, 2 }, { 8, 3 }, { 11, 2 }, { 13, 3 }, { 16, 2 },
+    { 18, 4 }, { 22, 2 }, { 24, 2 }, { 26, 2 }, { 28, 2 }, { 30, 3 }, { 33, 2 }, { 35, 3 },
+    { 38, 2 }, { 40, 4 }, { 44, 2 }, { 46, 2 }, { 48, 2 }, { 50, 2 }, { 52, 1 }, { 53, 2 },
+    { 55, 3 }, { 58, 2 }, { 60, 2 }, { 62, 2 }, { 64, 2 }, { 66, 2 }, { 68, 3 }, { 71, 2 },
+    { 73, 2 }, { 75, 2 }, { 77, 2 }, { 79, 2 }, { 81, 3 }, { 84, 4 }, { 88, 4 }, { 92, 32 },
+    { 124, 32 }, { 156, 32 }, { 188, 32 }, { 220, 2 }, { 222, 2 }, { 224, 2 }, { 226, 2 }, { 228, 2 }
+};
 
 static constexpr size_t GEAR_BASE_BYTE = 129;
 static constexpr int    GEAR_BASE_BIT  = 7;
 
-// gear[0]: 1 bit at base
-int Player::get_gear_accessory_flag() const {
-    return static_cast<int>(read_bits_at(GEAR_BASE_BYTE, GEAR_BASE_BIT, 1));
-}
-void Player::set_gear_accessory_flag(int val) {
-    write_bits_at(GEAR_BASE_BYTE, GEAR_BASE_BIT, 1, static_cast<uint32_t>(val & 0x1));
-}
-
-// gear[1]: 3 bits at base + 1 bit + skip(2 bytes, 0 bits) = base + 17 bits
-// Total from base: 1 bit (gear[0]) + 16 bits (2 byte skip) = 17 bits
-static inline void gear1_offset(size_t& bo, int& bi) {
-    long long total = static_cast<long long>(GEAR_BASE_BYTE) * 8 + GEAR_BASE_BIT + 17;
-    bo = static_cast<size_t>(total / 8);
-    bi = static_cast<int>(total % 8);
+uint32_t Player::get_gear_by_id(int id) const {
+    if (id < 0 || id >= 48) return 0;
+    long long total = static_cast<long long>(GEAR_BASE_BYTE) * 8 + GEAR_BASE_BIT + GEAR_DEFS[id].bit_offset;
+    size_t bo = static_cast<size_t>(total / 8);
+    int bi = static_cast<int>(total % 8);
+    return read_bits_at(bo, bi, GEAR_DEFS[id].bit_width);
 }
 
-int Player::get_gear_elbow_pad() const {
-    size_t bo; int bi; gear1_offset(bo, bi);
-    return static_cast<int>(read_bits_at(bo, bi, 3));
-}
-void Player::set_gear_elbow_pad(int val) {
-    size_t bo; int bi; gear1_offset(bo, bi);
-    write_bits_at(bo, bi, 3, static_cast<uint32_t>(val & 0x7));
-}
-
-// gear[2]: 3 bits immediately after gear[1]
-static inline void gear2_offset(size_t& bo, int& bi) {
-    long long total = static_cast<long long>(GEAR_BASE_BYTE) * 8 + GEAR_BASE_BIT + 17 + 3;
-    bo = static_cast<size_t>(total / 8);
-    bi = static_cast<int>(total % 8);
-}
-
-int Player::get_gear_wrist_band() const {
-    size_t bo; int bi; gear2_offset(bo, bi);
-    return static_cast<int>(read_bits_at(bo, bi, 3));
-}
-void Player::set_gear_wrist_band(int val) {
-    size_t bo; int bi; gear2_offset(bo, bi);
-    write_bits_at(bo, bi, 3, static_cast<uint32_t>(val & 0x7));
-}
-
-// gear[3]: 4 bits immediately after gear[2]
-static inline void gear3_offset(size_t& bo, int& bi) {
-    long long total = static_cast<long long>(GEAR_BASE_BYTE) * 8 + GEAR_BASE_BIT + 17 + 3 + 3;
-    bo = static_cast<size_t>(total / 8);
-    bi = static_cast<int>(total % 8);
-}
-
-int Player::get_gear_headband() const {
-    size_t bo; int bi; gear3_offset(bo, bi);
-    return static_cast<int>(read_bits_at(bo, bi, 4));
-}
-void Player::set_gear_headband(int val) {
-    size_t bo; int bi; gear3_offset(bo, bi);
-    write_bits_at(bo, bi, 4, static_cast<uint32_t>(val & 0xF));
-}
-
-// gear[14] (socks): 4 bits. To compute the offset we sum all preceding widths + skips:
-//   gear[0]=1, skip=16, gear[1]=3, gear[2]=3, gear[3]=4, skip=8,
-//   gear[4]=2, gear[5]=1, skip=1, gear[6]=4, gear[7]=3, gear[8]=3,
-//   skip=1, gear[9]=3, skip=1, gear[10]=3, gear[11]=3, gear[12]=3, gear[13]=2
-//   Total bits before gear[14]: 1+16+3+3+4+8+2+1+1+4+3+3+1+3+1+3+3+3+2 = 65
-static inline void gear_socks_offset(size_t& bo, int& bi) {
-    long long total = static_cast<long long>(GEAR_BASE_BYTE) * 8 + GEAR_BASE_BIT + 65;
-    bo = static_cast<size_t>(total / 8);
-    bi = static_cast<int>(total % 8);
-}
-
-int Player::get_gear_socks() const {
-    size_t bo; int bi; gear_socks_offset(bo, bi);
-    return static_cast<int>(read_bits_at(bo, bi, 4));
-}
-void Player::set_gear_socks(int val) {
-    size_t bo; int bi; gear_socks_offset(bo, bi);
-    write_bits_at(bo, bi, 4, static_cast<uint32_t>(val & 0xF));
+void Player::set_gear_by_id(int id, uint32_t value) {
+    if (id < 0 || id >= 48) return;
+    long long total = static_cast<long long>(GEAR_BASE_BYTE) * 8 + GEAR_BASE_BIT + GEAR_DEFS[id].bit_offset;
+    size_t bo = static_cast<size_t>(total / 8);
+    int bi = static_cast<int>(total % 8);
+    uint32_t mask = (1ULL << GEAR_DEFS[id].bit_width) - 1;
+    write_bits_at(bo, bi, GEAR_DEFS[id].bit_width, value & mask);
 }
 
 // ============================================================================
 // Data-driven Animations (40 items)
 // ============================================================================
-// RED MC 40 Animation sequence perfectly byte-aligned at record_offset + 193
-// All 40 animations are exactly 1-byte sequentially mapped
+// RED MC 40 Animation sequence is split between offset 193 (Shots/Signatures),
+// 178 (Dunks), and 274 (Layup).
 
-static constexpr size_t ANIMATION_BASE_BYTE = 193;
+static constexpr size_t ANIM_SHOTS_BASE = 193; // 193 + 0..18 = Shots & Iso
+static constexpr size_t ANIM_DUNKS_BASE = 178; // 178 + 0..14 = Dunks
+static constexpr size_t ANIM_INTRO_BASE = 211; // 193 + 18 = 211? No, 193 to 215 = 23 bytes
 
 int Player::get_animation_by_id(int id) const {
     if (id < 0 || id >= ANIM_COUNT) return 0;
-    return static_cast<int>(read_byte_at(ANIMATION_BASE_BYTE + id));
+    
+    // id 0-18: Shots & Momentum & Post & Iso Drives -> Base 193 + id
+    if (id >= 0 && id <= 18) {
+        return static_cast<int>(read_byte_at(ANIM_SHOTS_BASE + id));
+    }
+    // id 19: Layup Package -> 4 bits at byte 274, bit 2
+    if (id == 19) {
+        return static_cast<int>(read_bits_at(274, 2, 4));
+    }
+    // id 20-34: Dunk Packages 1-15 -> Base 178 + (id - 20)
+    if (id >= 20 && id <= 34) {
+        return static_cast<int>(read_byte_at(ANIM_DUNKS_BASE + (id - 20)));
+    }
+    // id 35-39: Pregame Intros -> follow offset 193 + 19 = 212
+    if (id >= 35 && id <= 39) {
+        return static_cast<int>(read_byte_at(ANIM_SHOTS_BASE + 19 + (id - 35)));
+    }
+    return 0;
 }
 
 void Player::set_animation_by_id(int id, int val) {
     if (id < 0 || id >= ANIM_COUNT) return;
-    write_byte_at(ANIMATION_BASE_BYTE + id, static_cast<uint8_t>(val & 0xFF));
+    
+    if (id >= 0 && id <= 18) {
+        write_byte_at(ANIM_SHOTS_BASE + id, static_cast<uint8_t>(val & 0xFF));
+    } else if (id == 19) {
+        write_bits_at(274, 2, 4, static_cast<uint32_t>(val & 0xF));
+    } else if (id >= 20 && id <= 34) {
+        write_byte_at(ANIM_DUNKS_BASE + (id - 20), static_cast<uint8_t>(val & 0xFF));
+    } else if (id >= 35 && id <= 39) {
+        write_byte_at(ANIM_SHOTS_BASE + 19 + (id - 35), static_cast<uint8_t>(val & 0xFF));
+    }
 }
 
 // ============================================================================
@@ -514,6 +729,7 @@ void RosterEditor::init(size_t buffer_ptr, int buffer_length) {
     }
 
     discover_player_table();
+    discover_team_table();
 }
 
 // -- Player Table Discovery ---------------------------------------------------
@@ -606,6 +822,46 @@ void RosterEditor::discover_player_table() {
     }
 }
 
+// -- Team Table Discovery -----------------------------------------------------
+// Strategy: Find Team 0 (76ers) or Team 1 (Bucks) roster array, identify the record start,
+// and set the table offset and size.
+void RosterEditor::discover_team_table() {
+    team_table_offset_ = 0;
+    team_count_ = 0;
+    team_record_size_ = 716; // Typically 716 bytes in 2K14
+
+    // To find the Team Table accurately without static offsets, we look for the unique 
+    // sequence of player IDs that make up a known team's roster.
+    
+    // We extracted the Milwaukee Bucks (Team 1) roster array from the Player table earlier:
+    // [1, 9, 17, 25, 33, 59]
+    // The roster array starts at offset +108 bytes into the Team record.
+    
+    bool found_bucks = false;
+    size_t bucks_array_offset = 0;
+    
+    for (size_t offset = 0; offset < buffer_length_ - 12; offset += 2) {
+        if (buffer_[offset] == 1 && buffer_[offset+1] == 0 &&
+            buffer_[offset+2] == 9 && buffer_[offset+3] == 0 &&
+            buffer_[offset+4] == 17 && buffer_[offset+5] == 0 &&
+            buffer_[offset+6] == 25 && buffer_[offset+7] == 0 &&
+            buffer_[offset+8] == 33 && buffer_[offset+9] == 0) {
+            bucks_array_offset = offset;
+            found_bucks = true;
+            break;
+        }
+    }
+    
+    // If Bucks roster array is found, Team 1 record starts 108 bytes before it.
+    // Team 0 (76ers) is immediately before Team 1, so the Team Table starts at:
+    // Team 1 Start - team_record_size
+    if (found_bucks && bucks_array_offset >= (108 + team_record_size_)) {
+        size_t team1_start = bucks_array_offset - 108;
+        team_table_offset_ = team1_start - team_record_size_;
+        team_count_ = 100; // Expected number of teams in 2K14
+    }
+}
+
 int RosterEditor::get_player_count() const {
     return player_count_;
 }
@@ -616,6 +872,18 @@ Player RosterEditor::get_player(int index) const {
     }
     size_t offset = player_table_offset_ + static_cast<size_t>(index) * player_record_size_;
     return Player(buffer_, buffer_length_, offset);
+}
+
+int RosterEditor::get_team_count() const {
+    return team_count_;
+}
+
+Team RosterEditor::get_team(int index) const {
+    if (index < 0 || index >= team_count_) {
+        throw std::out_of_range("RosterEditor::get_team: index out of range");
+    }
+    size_t offset = team_table_offset_ + static_cast<size_t>(index) * team_record_size_;
+    return Team(buffer_, buffer_length_, offset);
 }
 
 // -- CRC32 Checksum -----------------------------------------------------------

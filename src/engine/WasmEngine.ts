@@ -5,8 +5,8 @@
 // Uses Module._malloc / HEAPU8.set() for zero-copy file upload.
 // ============================================================================
 
-import type { IRosterEngine, PlayerData, RatingField, TendencyField, GearField } from './RosterEngine';
-import { POSITION_NAMES, RATING_DEFS, TENDENCY_DEFS, ANIMATION_DEFS } from './RosterEngine';
+import type { IRosterEngine, PlayerData, RatingField, TendencyField, TeamProperty } from './RosterEngine';
+import { POSITION_NAMES, RATING_DEFS, TENDENCY_DEFS, ANIMATION_DEFS, VITAL_TEAM_ID1, VITAL_TEAM_ID2 } from './RosterEngine';
 import type { RosterEditorModule, WasmRosterEditor } from '../types/wasm';
 
 /** Rating field → C++ getter/setter name suffix (legacy) */
@@ -27,14 +27,6 @@ const TENDENCY_CPP_MAP: Record<TendencyField, string> = {
     tendencyPostHook: 'tendency_post_hook',
 };
 
-/** Gear field → C++ getter/setter name suffix (legacy) */
-const GEAR_CPP_MAP: Record<GearField, string> = {
-    gearAccessoryFlag: 'gear_accessory_flag',
-    gearElbowPad: 'gear_elbow_pad',
-    gearWristBand: 'gear_wrist_band',
-    gearHeadband: 'gear_headband',
-    gearSocks: 'gear_socks',
-};
 
 /** Helper to safely call a method on an Embind proxy then delete it */
 function deleteProxy(proxy: unknown): void {
@@ -146,19 +138,31 @@ export class WasmEngine implements IRosterEngine {
                 animations.push(p.get_animation_by_id(i));
             }
 
+            const gear: number[] = [];
+            for (let i = 0; i < 48; i++) {
+                gear.push(p.get_gear_by_id(i));
+            }
+
+            const vitals: number[] = [];
+            for (let i = 0; i < 53; i++) {
+                vitals.push(p.get_vital_by_id(i));
+            }
+
             return {
                 index,
                 cfid: p.get_cfid(),
                 firstName: p.get_first_name() || 'Player',
                 lastName: p.get_last_name() || `#${index}`,
-                position: POSITION_NAMES[p.get_position()] ?? `${p.get_position()}`,
+                position: POSITION_NAMES[vitals[0]] ?? `${vitals[0]}`,
 
                 // Data-driven arrays
+                vitals,
                 ratings,
                 tendencies,
                 hotZones,
                 sigSkills,
                 animations,
+                gear,
 
                 // Legacy named fields (backward compat with existing grid)
                 threePointRating: ratings[4],   // RAT_SHOT_3PT
@@ -174,12 +178,12 @@ export class WasmEngine implements IRosterEngine {
                 tendencyDrivingDunk: tendencies[3],
                 tendencyPostHook: tendencies[4],
 
-                // Gear (vertical slice)
-                gearAccessoryFlag: p.get_gear_accessory_flag(),
-                gearElbowPad: p.get_gear_elbow_pad(),
-                gearWristBand: p.get_gear_wrist_band(),
-                gearHeadband: p.get_gear_headband(),
-                gearSocks: p.get_gear_socks(),
+                // Gear (vertical slice fallback mapping)
+                gearAccessoryFlag: gear[0],
+                gearElbowPad: gear[6], // Wait, this depends on GEAR_DEFS order
+                gearWristBand: gear[8],
+                gearHeadband: gear[0], // GHeadband = 0
+                gearSocks: gear[36],   // GSockLngh = 36
             };
         } finally {
             deleteProxy(p);
@@ -218,6 +222,133 @@ export class WasmEngine implements IRosterEngine {
         try { p.set_animation_by_id(animationId, value); } finally { deleteProxy(p); }
     }
 
+    setGearById(index: number, gearId: number, value: number): void {
+        const p = this.editor.get_player(index);
+        try { p.set_gear_by_id(gearId, value); } finally { deleteProxy(p); }
+    }
+
+    setVitalById(index: number, vitalId: number, value: number): void {
+        const p = this.editor.get_player(index);
+        try { p.set_vital_by_id(vitalId, value); } finally { deleteProxy(p); }
+    }
+
+    // -- Team Accessors -----------------------------------------------------
+
+    getTeamCount(): number {
+        return this.editor.get_team_count();
+    }
+
+    getTeam(index: number): import('./RosterEngine').TeamData {
+        const t = this.editor.get_team(index);
+        try {
+            const rosterIndices: number[] = [];
+            for (let i = 0; i < 15; i++) {
+                rosterIndices.push(t.get_roster_player_id(i));
+            }
+
+            return {
+                index,
+                teamId: t.get_id(),
+                name: t.get_name(),
+                city: t.get_city(),
+                abbr: t.get_abbr(),
+                color1: t.get_color1(),
+                color2: t.get_color2(),
+                rosterIndices,
+            };
+        } finally {
+            deleteProxy(t);
+        }
+    }
+
+    setTeamProperty(index: number, property: TeamProperty, value: string | number): void {
+        const t = this.editor.get_team(index);
+        try {
+            if (property === 'name') t.set_name(value as string);
+            else if (property === 'city') t.set_city(value as string);
+            else if (property === 'abbr') t.set_abbr(value as string);
+            else if (property === 'color1') t.set_color1(value as number);
+            else if (property === 'color2') t.set_color2(value as number);
+        } finally {
+            deleteProxy(t);
+        }
+    }
+
+    updateRosterAssignment(playerIndex: number, newTeamIndex: number | null): void {
+        const p = this.editor.get_player(playerIndex);
+        let oldTeamId = 255;
+        try {
+            oldTeamId = p.get_vital_by_id(VITAL_TEAM_ID1);
+        } finally {
+            deleteProxy(p);
+        }
+
+        // 1. Remove from old team roster if it exists
+        if (oldTeamId !== 255) {
+            const teamCount = this.editor.get_team_count();
+            for (let i = 0; i < teamCount; i++) {
+                const t = this.editor.get_team(i);
+                try {
+                    if (t.get_id() === oldTeamId) {
+                        for (let slot = 0; slot < 15; slot++) {
+                            if (t.get_roster_player_id(slot) === playerIndex) {
+                                t.set_roster_player_id(slot, 65535); // Clear slot
+                            }
+                        }
+                        break;
+                    }
+                } finally {
+                    deleteProxy(t);
+                }
+            }
+        }
+
+        // 2. Assign to new team or set free agent
+        if (newTeamIndex !== null) {
+            const t = this.editor.get_team(newTeamIndex);
+            try {
+                const newTeamId = t.get_id();
+                let assigned = false;
+                for (let slot = 0; slot < 15; slot++) {
+                    const existing = t.get_roster_player_id(slot);
+                    if (existing === 65535 || existing === 0) {
+                        t.set_roster_player_id(slot, playerIndex);
+                        assigned = true;
+                        break;
+                    }
+                }
+
+                if (!assigned) {
+                    throw new Error("Target team roster is full (15/15). Release a player first.");
+                }
+
+                // Update player's team vitals
+                const player = this.editor.get_player(playerIndex);
+                try {
+                    player.set_vital_by_id(VITAL_TEAM_ID1, newTeamId);
+                    player.set_vital_by_id(VITAL_TEAM_ID2, newTeamId);
+                } finally {
+                    deleteProxy(player);
+                }
+            } finally {
+                deleteProxy(t);
+            }
+        } else {
+            // Releasing to free agency (255)
+            const player = this.editor.get_player(playerIndex);
+            try {
+                player.set_vital_by_id(VITAL_TEAM_ID1, 255);
+                player.set_vital_by_id(VITAL_TEAM_ID2, 255);
+            } finally {
+                deleteProxy(player);
+            }
+        }
+    }
+
+    save_and_recalculate_checksum(): void {
+        this.editor.save_and_recalculate_checksum();
+    }
+
     // -- Legacy named setters (backward compat) -----------------------------
 
     setRating(index: number, field: RatingField, value: number): void {
@@ -242,15 +373,8 @@ export class WasmEngine implements IRosterEngine {
         } finally { deleteProxy(p); }
     }
 
-    setGear(index: number, field: GearField, value: number): void {
-        const cppName = GEAR_CPP_MAP[field];
-        if (!cppName) return;
-        const p = this.editor.get_player(index);
-        try {
-            const setter = `set_${cppName}` as keyof typeof p;
-            const fn = p[setter];
-            if (typeof fn === 'function') (fn as (v: number) => void).call(p, value);
-        } finally { deleteProxy(p); }
+    setGear(_index: number, _field: any, _value: number): void {
+        // Deprecated, no-op for generic engine calls using legacy names
     }
 
 

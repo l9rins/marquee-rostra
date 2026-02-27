@@ -168,6 +168,116 @@ enum AnimationID {
     ANIM_COUNT              // 40
 };
 
+enum VitalID {
+    VITAL_POSITION = 0,
+    VITAL_HEIGHT,
+    VITAL_WEIGHT,
+    VITAL_BIRTH_DAY,
+    VITAL_BIRTH_MONTH,
+    VITAL_BIRTH_YEAR,
+    VITAL_HAND,
+    VITAL_DUNK_HAND,
+    VITAL_YEARS_PRO,
+    VITAL_JERSEY_NUM,
+    VITAL_TEAM_ID1,
+    VITAL_TEAM_ID2,
+    VITAL_CONTRACT_Y1,
+    VITAL_CONTRACT_Y2,
+    VITAL_CONTRACT_Y3,
+    VITAL_CONTRACT_Y4,
+    VITAL_CONTRACT_Y5,
+    VITAL_CONTRACT_Y6,
+    VITAL_CONTRACT_Y7,
+    VITAL_CONTRACT_OPT,
+    VITAL_NO_TRADE,
+    VITAL_INJURY_TYPE,
+    VITAL_INJURY_DAYS,
+    VITAL_PLAY_STYLE,
+    VITAL_PLAY_TYPE1,
+    VITAL_PLAY_TYPE2,
+    VITAL_PLAY_TYPE3,
+    VITAL_PLAY_TYPE4,
+    VITAL_SKIN_TONE,
+    VITAL_BODY_TYPE,
+    VITAL_MUSCLE_TONE,
+    VITAL_HAIR_TYPE,
+    VITAL_HAIR_COLOR,
+    VITAL_EYE_COLOR,
+    VITAL_EYEBROW,
+    VITAL_MUSTACHE,
+    VITAL_FCL_HAIR_CLR,
+    VITAL_BEARD,
+    VITAL_GOATEE,
+    VITAL_SEC_POS,
+    VITAL_DRAFT_YEAR,
+    VITAL_DRAFT_ROUND,
+    VITAL_DRAFT_PICK,
+    VITAL_DRAFT_TEAM,
+    VITAL_NICKNAME,
+    VITAL_PLAY_INITIATOR,
+    VITAL_GOES_TO_3PT,
+    VITAL_PEAK_AGE_START,
+    VITAL_PEAK_AGE_END,
+    VITAL_POTENTIAL,
+    VITAL_LOYALTY,
+    VITAL_FINANCIAL_SECURITY,
+    VITAL_PLAY_FOR_WINNER,
+
+    VITAL_COUNT
+};
+
+enum GearID {
+    GEAR_HEADBAND = 0,
+    GEAR_HDBND_LG,
+    GEAR_UNDRSHRT,
+    GEAR_UNDRS_COL,
+    GEAR_LEFT_ARM,
+    GEAR_L_ARM_COL,
+    GEAR_LEFT_ELB,
+    GEAR_L_ELB_COL,
+    GEAR_LEFT_WRST,
+    GEAR_L_WRST_C1,
+    GEAR_L_WRST_C2,
+    GEAR_LEFT_FNGR,
+    GEAR_L_FNGR_COL,
+    GEAR_RGHT_ARM,
+    GEAR_R_ARM_COL,
+    GEAR_RGHT_ELB,
+    GEAR_R_ELB_COL,
+    GEAR_RGHT_WRST,
+    GEAR_R_WRST_C1,
+    GEAR_R_WRST_C2,
+    GEAR_RGHT_FNGR,
+    GEAR_R_FNGR_COL,
+    GEAR_PRES_SHRT,
+    GEAR_PRS_SH_COL,
+    GEAR_LEFT_LEG,
+    GEAR_L_LEG_COL,
+    GEAR_LEFT_KNEE,
+    GEAR_L_KNEE_COL,
+    GEAR_LEFT_ANKL,
+    GEAR_L_ANKL_COL,
+    GEAR_RGHT_LEG,
+    GEAR_R_LEG_COL,
+    GEAR_RGHT_KNEE,
+    GEAR_R_KNEE_COL,
+    GEAR_RGHT_ANKL,
+    GEAR_R_ANKL_COL,
+    GEAR_SOCK_LNGH,
+    GEAR_SHS_BR_LCK,
+    GEAR_SHS_BRAND,
+    GEAR_SHS_MODEL1,
+    GEAR_SHS_MODEL2,
+    GEAR_SHS_MODEL3,
+    GEAR_SHS_MODEL4,
+    GEAR_SHS_COL_MOD,
+    GEAR_SHS_COL_H_SD,
+    GEAR_SHS_COL_H_TR,
+    GEAR_SHS_COL_A_SD,
+    GEAR_SHS_COL_A_TR,
+    GEAR_COUNT              // 48
+};
+
 class Player {
 public:
     Player();
@@ -220,23 +330,21 @@ public:
     int  get_tendency_post_hook() const;
     void set_tendency_post_hook(int val);
 
-    // -- Gear / Accessories (mixed bit-widths) -------------------------------
-    int  get_gear_accessory_flag() const;
-    void set_gear_accessory_flag(int val);
-    int  get_gear_elbow_pad() const;
-    void set_gear_elbow_pad(int val);
-    int  get_gear_wrist_band() const;
-    void set_gear_wrist_band(int val);
-    int  get_gear_headband() const;
-    void set_gear_headband(int val);
-    int  get_gear_socks() const;
-    void set_gear_socks(int val);
+    // -- Gear / Accessories (48 fields) --------------------------------------
+    uint32_t get_gear_by_id(int id) const;
+    void set_gear_by_id(int id, uint32_t value);
+    static int get_gear_count() { return 48; }
 
     // -- Data-driven animations (all 40) -------------------------------------
     // Starts exactly at Byte 193
     int  get_animation_by_id(int id) const;
     void set_animation_by_id(int id, int value);
     static int get_animation_count() { return 40; }
+
+    // -- Data-driven bio/vitals (9 fields) -----------------------------------
+    int  get_vital_by_id(int id) const;
+    void set_vital_by_id(int id, int value);
+    static int get_vital_count() { return 9; }
 
     // -- Hot Zones (2-bit values, 14 zones) ----------------------------------
     int  get_hot_zone(int zone_id) const;   // zone_id: 0..13
@@ -272,6 +380,53 @@ private:
 };
 
 // ---------------------------------------------------------------------------
+// Team — represents one team record in the roster file
+// ---------------------------------------------------------------------------
+
+class Team {
+public:
+    Team();
+    Team(uint8_t* buffer, size_t buffer_length, size_t record_offset);
+
+    // -- Basic Identifiers --
+    int get_id() const;              // e.g. City ID or Team ID
+    std::string get_name() const;    
+    std::string get_city() const;    
+    std::string get_abbr() const;
+
+    void set_name(const std::string& name);
+    void set_city(const std::string& city);
+    void set_abbr(const std::string& abbr);
+
+    // -- Colors (Hex values typically stored as ARGB or separate bytes) --
+    uint32_t get_color1() const;
+    uint32_t get_color2() const;
+    void set_color1(uint32_t argb);
+    void set_color2(uint32_t argb);
+
+    // -- Rosters (Arrays of player indices) --
+    // Returns the 16-bit player index for the given roster slot (0-14, where 0-4 are usually starters)
+    int get_roster_player_id(int index) const; 
+    void set_roster_player_id(int index, int player_id);
+
+    // -- Record context --
+    size_t get_record_offset() const { return record_offset_; }
+
+private:
+    uint8_t* buffer_;
+    size_t   buffer_length_;
+    size_t   record_offset_;
+
+    // Helpers
+    uint8_t  read_byte_at(size_t offset) const;
+    void     write_byte_at(size_t offset, uint8_t value);
+    uint16_t read_u16_le(size_t offset) const;
+    void     write_u16_le(size_t offset, uint16_t value);
+    uint32_t read_u32_le(size_t offset) const;
+    void     write_u32_le(size_t offset, uint32_t value);
+};
+
+// ---------------------------------------------------------------------------
 // RosterEditor — top-level editor managing the file buffer and player table
 // ---------------------------------------------------------------------------
 class RosterEditor {
@@ -286,6 +441,10 @@ public:
     // Player access
     int     get_player_count() const;
     Player  get_player(int index) const;
+
+    // Team access
+    int     get_team_count() const;
+    Team    get_team(int index) const;
 
     // Recalculate the CRC32 checksum and overwrite the first 4 bytes.
     void save_and_recalculate_checksum();
@@ -303,6 +462,11 @@ private:
     int      player_count_;
     size_t   player_record_size_;
 
+    size_t   team_table_offset_;
+    int      team_count_;
+    size_t   team_record_size_;
+
     // Internal discovery
     void discover_player_table();
+    void discover_team_table();
 };

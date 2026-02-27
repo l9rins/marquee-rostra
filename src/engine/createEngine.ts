@@ -31,5 +31,5 @@ export async function createEngine(buffer: ArrayBuffer): Promise<IRosterEngine> 
 
     // Fall back to pure-JS engine
     console.log('[Rostra] 🔧 Using JS fallback engine');
-    return new JsFallbackEngine(buffer);
+    return new JsFallbackEngine(new Uint8Array(buffer));
 }
