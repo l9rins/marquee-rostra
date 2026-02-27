@@ -10,8 +10,8 @@
 // ============================================================================
 
 import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
-import type { IRosterEngine, PlayerData, EditableField, RatingField, TendencyField, GearField, SignatureField } from '../engine/RosterEngine';
-import { RATING_DEFS, TENDENCY_DEFS, HOT_ZONE_NAMES, HOT_ZONE_VALUES } from '../engine/RosterEngine';
+import type { IRosterEngine, PlayerData, EditableField, RatingField, GearField } from '../engine/RosterEngine';
+import { RATING_DEFS, TENDENCY_DEFS, HOT_ZONE_NAMES, HOT_ZONE_VALUES, ANIMATION_DEFS } from '../engine/RosterEngine';
 import { createEngine } from '../engine/createEngine';
 import { RadarChart } from './RadarChart';
 import { toast } from 'sonner';
@@ -769,11 +769,12 @@ export default function RosterDashboard() {
 
                             <div className="p-6 space-y-6">
                                 <Tabs defaultValue="core">
-                                    <TabsList className="w-full grid grid-cols-5">
+                                    <TabsList className="w-full grid grid-cols-3 h-auto gap-1 p-1">
                                         <TabsTrigger value="core">Core</TabsTrigger>
                                         <TabsTrigger value="ratings">Ratings</TabsTrigger>
                                         <TabsTrigger value="tendencies">Tendencies</TabsTrigger>
                                         <TabsTrigger value="hotzones">Hot Zones</TabsTrigger>
+                                        <TabsTrigger value="animations">Anim & Sigs</TabsTrigger>
                                         <TabsTrigger value="gear">Gear</TabsTrigger>
                                     </TabsList>
 
@@ -955,34 +956,83 @@ export default function RosterDashboard() {
                                             })}
                                         </div>
 
-                                        {/* Signature Skills */}
-                                        <h3 className="text-xs uppercase tracking-wider text-muted-foreground flex items-center gap-2 after:content-[''] after:flex-1 after:h-px after:bg-border mt-4">
-                                            Signature Skills (5 slots)
-                                        </h3>
-                                        <div className="space-y-2">
-                                            {[0, 1, 2, 3, 4].map((slot) => (
-                                                <div key={slot} className="grid grid-cols-[100px_1fr] items-center gap-3">
-                                                    <label className="text-sm font-medium text-muted-foreground">Slot {slot + 1}</label>
-                                                    <Input
-                                                        type="number"
-                                                        min={0}
-                                                        max={63}
-                                                        className="w-20 h-7 font-mono text-xs"
-                                                        value={profilePlayer.sigSkills[slot]}
-                                                        onChange={(e) => {
-                                                            if (!engine) return;
-                                                            const v = Math.max(0, Math.min(63, parseInt(e.target.value, 10) || 0));
-                                                            engine.setSigSkill(profilePlayer.index, slot, v);
-                                                            const updated = engine.getPlayer(profilePlayer.index);
-                                                            setPlayers(prev => prev.map(p => p.index === profilePlayer.index ? updated : p));
-                                                        }}
-                                                    />
-                                                </div>
-                                            ))}
-                                        </div>
                                     </TabsContent>
 
-                                    {/* ---- Tab: Gear & Signatures ---- */}
+                                    {/* ---- Tab: Animations & Sigs ---- */}
+                                    <TabsContent value="animations" className="space-y-6 mt-4 max-h-[60vh] overflow-y-auto pr-2">
+                                        {/* Signature Skills */}
+                                        <div>
+                                            <h3 className="text-xs uppercase tracking-wider text-muted-foreground flex items-center gap-2 mb-3 after:content-[''] after:flex-1 after:h-px after:bg-border">
+                                                Signature Skills (5 slots)
+                                            </h3>
+                                            <div className="grid grid-cols-2 gap-2">
+                                                {[0, 1, 2, 3, 4].map((slot) => (
+                                                    <div key={slot} className="flex items-center justify-between bg-secondary border border-border rounded-lg px-3 py-2">
+                                                        <span className="text-xs font-medium text-muted-foreground">Slot {slot + 1}</span>
+                                                        <Input
+                                                            type="number"
+                                                            min={0}
+                                                            max={63}
+                                                            className="w-16 h-6 font-mono text-xs text-right p-1"
+                                                            value={profilePlayer.sigSkills[slot]}
+                                                            onChange={(e) => {
+                                                                if (!engine) return;
+                                                                const v = Math.max(0, Math.min(63, parseInt(e.target.value, 10) || 0));
+                                                                engine.setSigSkill(profilePlayer.index, slot, v);
+                                                                const updated = engine.getPlayer(profilePlayer.index);
+                                                                setPlayers(prev => prev.map(p => p.index === profilePlayer.index ? updated : p));
+                                                            }}
+                                                        />
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+
+                                        {/* 40 Animations */}
+                                        {Object.entries(
+                                            ANIMATION_DEFS.reduce<Record<string, typeof ANIMATION_DEFS>>((acc, t) => {
+                                                (acc[t.category] ??= []).push(t);
+                                                return acc;
+                                            }, {})
+                                        ).map(([category, defs]) => (
+                                            <div key={category}>
+                                                <h3 className="text-xs uppercase tracking-wider text-muted-foreground mb-2 flex items-center gap-2 after:content-[''] after:flex-1 after:h-px after:bg-border">
+                                                    {category}
+                                                </h3>
+                                                <div className="grid grid-cols-2 gap-2 mb-4">
+                                                    {defs.map((a) => {
+                                                        const val = profilePlayer.animations[a.id];
+                                                        return (
+                                                            <div key={a.id} className="flex flex-col bg-background/50 border border-border/50 rounded-md p-2 hover:bg-muted/50 transition-colors">
+                                                                <span className="text-[10px] font-semibold text-muted-foreground leading-none mb-1.5 truncate" title={a.name}>
+                                                                    {a.name}
+                                                                </span>
+                                                                <div className="flex justify-between items-center">
+                                                                    <span className="text-xs text-muted-foreground/50">ID {a.id}</span>
+                                                                    <Input
+                                                                        type="number"
+                                                                        min={0}
+                                                                        max={255}
+                                                                        className="h-6 w-16 font-mono text-xs text-right p-1 bg-background"
+                                                                        value={val}
+                                                                        onChange={(e) => {
+                                                                            if (!engine) return;
+                                                                            const newVal = Math.max(0, Math.min(255, parseInt(e.target.value, 10) || 0));
+                                                                            engine.setAnimationById(profilePlayer.index, a.id, newVal);
+                                                                            const updated = engine.getPlayer(profilePlayer.index);
+                                                                            setPlayers(prev => prev.map(p => p.index === profilePlayer.index ? updated : p));
+                                                                        }}
+                                                                    />
+                                                                </div>
+                                                            </div>
+                                                        );
+                                                    })}
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </TabsContent>
+
+                                    {/* ---- Tab: Gear ---- */}
                                     <TabsContent value="gear" className="space-y-6 mt-4">
                                         {/* Gear Section */}
                                         <div className="space-y-4">
@@ -1017,38 +1067,9 @@ export default function RosterDashboard() {
                                             ))}
                                         </div>
 
-                                        {/* Signature Animations Section */}
-                                        <div className="space-y-4">
-                                            <h3 className="text-xs uppercase tracking-wider text-muted-foreground flex items-center gap-2 after:content-[''] after:flex-1 after:h-px after:bg-border">
-                                                Signature Animations
-                                            </h3>
-                                            {([
-                                                ['Shot Form', 'sigShotForm'],
-                                                ['Shot Base', 'sigShotBase'],
-                                            ] as [string, SignatureField][]).map(([label, field]) => (
-                                                <div key={field} className="grid grid-cols-[120px_1fr] items-center gap-3">
-                                                    <label className="text-sm font-medium text-muted-foreground">{label}</label>
-                                                    <Input
-                                                        type="number"
-                                                        min={0}
-                                                        max={255}
-                                                        className="w-24 h-8 font-mono text-sm"
-                                                        value={profilePlayer[field]}
-                                                        onChange={(e) => {
-                                                            if (!engine) return;
-                                                            const val = Math.max(0, Math.min(255, parseInt(e.target.value, 10) || 0));
-                                                            engine.setSignature(profilePlayer.index, field, val);
-                                                            const updated = engine.getPlayer(profilePlayer.index);
-                                                            setPlayers(prev => prev.map(p => p.index === profilePlayer.index ? updated : p));
-                                                            toast.success(`Updated ${label}`);
-                                                        }}
-                                                    />
-                                                </div>
-                                            ))}
-                                        </div>
 
                                         <p className="text-xs text-muted-foreground pt-2 border-t border-border">
-                                            Gear values are bit-packed (1–4 bits). Signature IDs are byte-aligned (0–255). Extend with more fields using the pattern in <code className="bg-muted px-1 rounded">RosterEditor.cpp</code>.
+                                            Gear values are bit-packed (1–4 bits). Extend with more fields using the pattern in <code className="bg-muted px-1 rounded">RosterEditor.cpp</code>.
                                         </p>
                                     </TabsContent>
                                 </Tabs>

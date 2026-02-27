@@ -62,6 +62,112 @@ enum RatingID {
     RAT_COUNT              // 43 — sentinel
 };
 
+enum TendencyID {
+    TEND_SHOT_TENDENCY = 0,
+    TEND_INSIDE_SHOTS,
+    TEND_CLOSE_SHOTS,
+    TEND_MID_RANGE_SHOTS,
+    TEND_3PT_SHOTS,
+    TEND_PUTBACKS,
+    TEND_DRIVE_LANE_VS_SPOT_UP,
+    TEND_PULL_UP_VS_PENETRATE,
+    TEND_PUMP_FAKE,
+    TEND_TRIPLE_THREAT,
+    TEND_TRIPLE_THREAT_SHOT,
+    TEND_NO_3_THREAT_MOVES,
+    TEND_STRAIGHT_DRIBBLE,
+    TEND_SIZEUP,
+    TEND_HESITATION,
+    TEND_DRIVE_RIGHT_VS_LEFT,
+    TEND_CROSSOVER,
+    TEND_SPIN,
+    TEND_STEP_BACK,
+    TEND_HALF_SPIN,
+    TEND_DOUBLE_CROSS,
+    TEND_BEHIND_THE_BACK,
+    TEND_HESITATION_CROSS,
+    TEND_IN_AND_OUT,
+    TEND_SIMPLE_DRIVE,
+    TEND_ATTACK_THE_BASKET,
+    TEND_PASS_OUT,
+    TEND_FADEAWAYS,
+    TEND_STEPBACK_JUMPER,
+    TEND_SPIN_JUMPER,
+    TEND_DUNK_VS_LAYUP,
+    TEND_ALLEY_OOPS,
+    TEND_USE_GLASS,
+    TEND_DRAW_FOUL,
+    TEND_CRASH,
+    TEND_PICK_AND_ROLL_VS_FADE,
+    TEND_POST_UP,
+    TEND_TOUCHES,
+    TEND_POST_SPIN, // Renamed from Spin
+    TEND_POST_DRIVE, // Renamed from Drive
+    TEND_AGGRESSIVE_BACKDOWN,
+    TEND_LEAVE_POST,
+    TEND_DROP_STEP,
+    TEND_FACE_UP,
+    TEND_BACK_DOWN,
+    TEND_POST_SHOTS,
+    TEND_POST_HOOK,
+    TEND_POST_FADEAWAY,
+    TEND_SHIMMY_SHOT,
+    TEND_HOP_SHOT,
+    TEND_FLASHY_PASSES,
+    TEND_THROW_ALLEY_OOP,
+    TEND_HARD_FOUL,
+    TEND_TAKE_CHARGE,
+    TEND_PLAY_PASS_LANE,
+    TEND_ON_BAL_STL,
+    TEND_CONT_SHOT,
+    TEND_COMM_FOUL,
+    TEND_COUNT              // 58 — sentinel
+};
+
+enum AnimationID {
+    ANIM_SHT_RL_TIM = 0,
+    ANIM_SHT_FORM,
+    ANIM_SHT_BASE,
+    ANIM_FADEAWAY,
+    ANIM_CONTESTD,
+    ANIM_FREE_T,
+    ANIM_DR_PULL_UP,
+    ANIM_SPIN_JMPR,
+    ANIM_HOP_JMPR,
+    ANIM_PST_FADE,
+    ANIM_PST_HOOK,
+    ANIM_PST_HOP_SH,
+    ANIM_PST_SHM_SH,
+    ANIM_PST_PRTCT,
+    ANIM_PST_PRT_SPN,
+    ANIM_ISO_CROSS,
+    ANIM_ISO_BH_BCK,
+    ANIM_ISO_SPIN,
+    ANIM_ISO_HESIT,
+    ANIM_LAY_UP,
+    ANIM_GO_TO_DUNK,
+    ANIM_DUNK2,
+    ANIM_DUNK3,
+    ANIM_DUNK4,
+    ANIM_DUNK5,
+    ANIM_DUNK6,
+    ANIM_DUNK7,
+    ANIM_DUNK8,
+    ANIM_DUNK9,
+    ANIM_DUNK10,
+    ANIM_DUNK11,
+    ANIM_DUNK12,
+    ANIM_DUNK13,
+    ANIM_DUNK14,
+    ANIM_DUNK15,
+    ANIM_INT_PRE_GI,
+    ANIM_INT_PRE_G1,
+    ANIM_INT_PRE_G2,
+    ANIM_INT_PRE_T1,
+    ANIM_INT_PRE_T2,
+    ANIM_COUNT              // 40
+};
+
 class Player {
 public:
     Player();
@@ -126,11 +232,11 @@ public:
     int  get_gear_socks() const;
     void set_gear_socks(int val);
 
-    // -- Signature Animations (byte-aligned at known offset) -----------------
-    int  get_sig_shot_form() const;
-    void set_sig_shot_form(int val);
-    int  get_sig_shot_base() const;
-    void set_sig_shot_base(int val);
+    // -- Data-driven animations (all 40) -------------------------------------
+    // Starts exactly at Byte 193
+    int  get_animation_by_id(int id) const;
+    void set_animation_by_id(int id, int value);
+    static int get_animation_count() { return 40; }
 
     // -- Hot Zones (2-bit values, 14 zones) ----------------------------------
     int  get_hot_zone(int zone_id) const;   // zone_id: 0..13

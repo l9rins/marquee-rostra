@@ -63,10 +63,8 @@ EMSCRIPTEN_BINDINGS(roster_editor_module) {
         .function("get_gear_socks",           &Player::get_gear_socks)
         .function("set_gear_socks",           &Player::set_gear_socks)
         // -- Signatures (byte-aligned) --
-        .function("get_sig_shot_form",        &Player::get_sig_shot_form)
-        .function("set_sig_shot_form",        &Player::set_sig_shot_form)
-        .function("get_sig_shot_base",        &Player::get_sig_shot_base)
-        .function("set_sig_shot_base",        &Player::set_sig_shot_base)
+        .function("get_animation_by_id",      &Player::get_animation_by_id)
+        .function("set_animation_by_id",      &Player::set_animation_by_id)
         ;
 
     class_<RosterEditor>("RosterEditor")

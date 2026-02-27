@@ -5,32 +5,31 @@
 // Used as a fallback when Wasm fails to load.
 // ============================================================================
 
-import type { IRosterEngine, PlayerData, RatingField, TendencyField, GearField, SignatureField } from './RosterEngine';
-import { POSITION_NAMES, RATING_DEFS, TENDENCY_DEFS } from './RosterEngine';
+import type { IRosterEngine, PlayerData, RatingField, TendencyField, GearField } from './RosterEngine';
+import { POSITION_NAMES, RATING_DEFS, TENDENCY_DEFS, ANIMATION_DEFS } from './RosterEngine';
 
 // ============================================================================
 // Constants — must match RosterEditor.cpp
 // ============================================================================
 
-const TEAM_TABLE_MARKER = 0x2850EC;
 const CFID_OFFSET = 28;
 const FIRST_NAME_OFFSET = 52;
 const LAST_NAME_OFFSET = 56;
 const POSITION_OFFSET = 60;
-const DEFAULT_RECORD_SIZE = 911;
+const DEFAULT_RECORD_SIZE = 1023;
 
-// Rating byte offsets — must exactly match RATING_OFFSETS[] in RosterEditor.cpp
+// Rating byte offsets — empirical 2K14 shifts targeting Byte 409
 const RATING_OFFSETS = [
-    30, 31, 32, 45, 44, 33, 46, 34, 35, 36,    // 0-9
-    37, 38, 39, 40, 41, 42, 43, 47, 49, 50,    // 10-19
-    51, 52, 53, 54, 55, 56, 57, 58, 59, 60,    // 20-29
-    61, 62, 63, 64, 65, 48, 66, 67, 68, 69,    // 30-39
-    70, 71, 72,                                  // 40-42
+    409, 410, 411, 424, 423, 412, 425, 413, 414, 415,
+    416, 417, 418, 419, 420, 421, 422, 426, 428, 429,
+    430, 431, 432, 433, 434, 435, 436, 437, 438, 439,
+    440, 441, 442, 443, 444, 427, 445, 446, 447, 448,
+    449, 450, 451
 ];
 
 // Tendency bit-packed layout
-const TENDENCY_BASE_BYTE = 65;
-const TENDENCY_BASE_BIT = 6;
+const TENDENCY_BASE_BYTE = 144;
+const TENDENCY_BASE_BIT = 3;
 
 // Gear layout
 const GEAR_BASE_BYTE = 129;
@@ -44,9 +43,8 @@ const GEAR_LAYOUT: Record<GearField, { bitOffset: number; bitWidth: number }> = 
     gearSocks: { bitOffset: 65, bitWidth: 4 },
 };
 
-// Signatures
-const SIG_BASE_BYTE = 193;
-const SIG_OFFSET: Record<SignatureField, number> = { sigShotForm: 1, sigShotBase: 2 };
+// Animations
+const ANIMATION_BASE_BYTE = 193;
 
 // Sig skills: 5 × 6 bits at record + 14 bytes + 3 bits
 const SIG_SKILL_BASE_BYTE = 14;
@@ -130,24 +128,57 @@ export class JsFallbackEngine implements IRosterEngine {
 
     private discoverPlayerTable(): void {
         const view = new DataView(this.buffer.buffer);
-        for (let offset = 0; offset < this.buffer.length - 16; offset += 4) {
-            if (view.getUint32(offset, true) === TEAM_TABLE_MARKER) {
-                const headerSize = view.getUint32(offset + 4, true);
-                const tableStart = offset + headerSize;
-                const tableEnd = this.findTableEnd(tableStart);
-                const count = Math.floor((tableEnd - tableStart) / DEFAULT_RECORD_SIZE);
-                if (count > 0 && count < 1500) {
-                    this.playerTableOffset = tableStart;
-                    this.playerCount_ = count;
-                    return;
-                }
+        let found = false;
+        let candidateOffset = 0;
+
+        // Scan forward from the beginning of the buffer
+        for (let offset = 0; offset < this.buffer.length - DEFAULT_RECORD_SIZE * 3; offset += 4) {
+            const cfidOff1 = offset + CFID_OFFSET;
+            const cfidOff2 = offset + DEFAULT_RECORD_SIZE + CFID_OFFSET;
+            const cfidOff3 = offset + (DEFAULT_RECORD_SIZE * 2) + CFID_OFFSET;
+
+            if (cfidOff3 + 1 >= this.buffer.length) break;
+
+            const cfid1 = view.getUint16(cfidOff1, true);
+            const cfid2 = view.getUint16(cfidOff2, true);
+            const cfid3 = view.getUint16(cfidOff3, true);
+
+            // Heuristic: valid CFIDs are typically in range 0–10000.
+            // Allow Index 0 to be exactly 0 (Null Player).
+            if ((cfid1 === 0 || (cfid1 > 0 && cfid1 < 10000)) &&
+                (cfid2 > 0 && cfid2 < 10000) &&
+                (cfid3 > 0 && cfid3 < 10000)) {
+                candidateOffset = offset;
+                found = true;
+                break;
             }
         }
-        this.playerCount_ = 0;
-    }
 
-    private findTableEnd(start: number): number {
-        return Math.min(start + 1500 * DEFAULT_RECORD_SIZE, this.buffer.length);
+        if (found) {
+            this.playerTableOffset = candidateOffset;
+            let count = 0;
+            // Count valid players
+            for (let offset = candidateOffset; 
+                 offset + DEFAULT_RECORD_SIZE <= this.buffer.length && count < 1500; 
+                 offset += DEFAULT_RECORD_SIZE) {
+                
+                const cfidOff = offset + CFID_OFFSET;
+                if (cfidOff + 1 >= this.buffer.length) break;
+                const cfid = view.getUint16(cfidOff, true);
+
+                if (cfid === 0 && count > 10) {
+                    const nextOff = offset + DEFAULT_RECORD_SIZE + CFID_OFFSET;
+                    if (nextOff + 1 < this.buffer.length) {
+                         const nextCfid = view.getUint16(nextOff, true);
+                         if (nextCfid === 0) break; // End of table
+                    }
+                }
+                count++;
+            }
+            this.playerCount_ = count;
+        } else {
+            this.playerCount_ = 0;
+        }
     }
 
     // -- Record accessors -----------------------------------------------------
@@ -176,7 +207,7 @@ export class JsFallbackEngine implements IRosterEngine {
             const totalBits = TENDENCY_BASE_BYTE * 8 + TENDENCY_BASE_BIT + i * 8;
             const bo = Math.floor(totalBits / 8);
             const bi = totalBits % 8;
-            tendencies.push(this.readBitsAt(rec, bo, bi, 8));
+            tendencies.push(this.readBitsAt(rec, bo, bi, 8) & 127);
         }
 
         // 14 hot zones
@@ -195,6 +226,13 @@ export class JsFallbackEngine implements IRosterEngine {
             const bo = Math.floor(totalBits / 8);
             const bi = totalBits % 8;
             sigSkills.push(this.readBitsAt(rec, bo, bi, 6));
+        }
+
+        // 40 animations
+        const animations: number[] = [];
+        for (let i = 0; i < ANIMATION_DEFS.length; i++) {
+            const absOff = rec + ANIMATION_BASE_BYTE + i;
+            animations.push(absOff < this.buffer.length ? this.buffer[absOff] : 0);
         }
 
         // Name reading
@@ -226,6 +264,7 @@ export class JsFallbackEngine implements IRosterEngine {
             tendencies,
             hotZones,
             sigSkills,
+            animations,
 
             // Legacy named fields
             threePointRating: ratings[4],
@@ -245,9 +284,6 @@ export class JsFallbackEngine implements IRosterEngine {
             gearWristBand: this.readGearAt(rec, 'gearWristBand'),
             gearHeadband: this.readGearAt(rec, 'gearHeadband'),
             gearSocks: this.readGearAt(rec, 'gearSocks'),
-
-            sigShotForm: (rec + SIG_BASE_BYTE + 1 < this.buffer.length) ? this.buffer[rec + SIG_BASE_BYTE + 1] : 0,
-            sigShotBase: (rec + SIG_BASE_BYTE + 2 < this.buffer.length) ? this.buffer[rec + SIG_BASE_BYTE + 2] : 0,
         };
     }
 
@@ -283,7 +319,11 @@ export class JsFallbackEngine implements IRosterEngine {
         if (tendencyId < 0 || tendencyId >= 58) return;
         const rec = this.recordStart(index);
         const totalBits = TENDENCY_BASE_BYTE * 8 + TENDENCY_BASE_BIT + tendencyId * 8;
-        this.writeBitsAt(rec, Math.floor(totalBits / 8), totalBits % 8, 8, value & 0xFF);
+        const bo = Math.floor(totalBits / 8);
+        const bi = totalBits % 8;
+        const current = this.readBitsAt(rec, bo, bi, 8);
+        const msb = current & 128;
+        this.writeBitsAt(rec, bo, bi, 8, (value & 127) | msb);
     }
 
     setHotZone(index: number, zoneId: number, value: number): void {
@@ -298,6 +338,15 @@ export class JsFallbackEngine implements IRosterEngine {
         const rec = this.recordStart(index);
         const totalBits = SIG_SKILL_BASE_BYTE * 8 + SIG_SKILL_BASE_BIT + slot * 6;
         this.writeBitsAt(rec, Math.floor(totalBits / 8), totalBits % 8, 6, value & 0x3F);
+    }
+
+    setAnimationById(index: number, animationId: number, value: number): void {
+        if (animationId < 0 || animationId >= ANIMATION_DEFS.length) return;
+        const rec = this.recordStart(index);
+        const absOff = rec + ANIMATION_BASE_BYTE + animationId;
+        if (absOff < this.buffer.length) {
+            this.buffer[absOff] = value & 0xFF;
+        }
     }
 
     // -- Legacy named setters (backward compat) --------------------------------
@@ -319,15 +368,6 @@ export class JsFallbackEngine implements IRosterEngine {
 
     setGear(index: number, field: GearField, value: number): void {
         this.writeGearAt(this.recordStart(index), field, value);
-    }
-
-    setSignature(index: number, field: SignatureField, value: number): void {
-        const rec = this.recordStart(index);
-        const off = SIG_OFFSET[field];
-        const absOff = rec + SIG_BASE_BYTE + off;
-        if (absOff < this.buffer.length) {
-            this.buffer[absOff] = value & 0xFF;
-        }
     }
 
     // -- File I/O -------------------------------------------------------------

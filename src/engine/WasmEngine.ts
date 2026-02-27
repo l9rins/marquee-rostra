@@ -5,8 +5,8 @@
 // Uses Module._malloc / HEAPU8.set() for zero-copy file upload.
 // ============================================================================
 
-import type { IRosterEngine, PlayerData, RatingField, TendencyField, GearField, SignatureField } from './RosterEngine';
-import { POSITION_NAMES, RATING_DEFS, TENDENCY_DEFS } from './RosterEngine';
+import type { IRosterEngine, PlayerData, RatingField, TendencyField, GearField } from './RosterEngine';
+import { POSITION_NAMES, RATING_DEFS, TENDENCY_DEFS, ANIMATION_DEFS } from './RosterEngine';
 import type { RosterEditorModule, WasmRosterEditor } from '../types/wasm';
 
 /** Rating field → C++ getter/setter name suffix (legacy) */
@@ -34,12 +34,6 @@ const GEAR_CPP_MAP: Record<GearField, string> = {
     gearWristBand: 'gear_wrist_band',
     gearHeadband: 'gear_headband',
     gearSocks: 'gear_socks',
-};
-
-/** Signature field → C++ getter/setter name suffix (legacy) */
-const SIG_CPP_MAP: Record<SignatureField, string> = {
-    sigShotForm: 'sig_shot_form',
-    sigShotBase: 'sig_shot_base',
 };
 
 /** Helper to safely call a method on an Embind proxy then delete it */
@@ -146,6 +140,12 @@ export class WasmEngine implements IRosterEngine {
                 sigSkills.push(p.get_sig_skill(i));
             }
 
+            // Extract 40 animations
+            const animations: number[] = [];
+            for (let i = 0; i < ANIMATION_DEFS.length; i++) {
+                animations.push(p.get_animation_by_id(i));
+            }
+
             return {
                 index,
                 cfid: p.get_cfid(),
@@ -158,6 +158,7 @@ export class WasmEngine implements IRosterEngine {
                 tendencies,
                 hotZones,
                 sigSkills,
+                animations,
 
                 // Legacy named fields (backward compat with existing grid)
                 threePointRating: ratings[4],   // RAT_SHOT_3PT
@@ -179,10 +180,6 @@ export class WasmEngine implements IRosterEngine {
                 gearWristBand: p.get_gear_wrist_band(),
                 gearHeadband: p.get_gear_headband(),
                 gearSocks: p.get_gear_socks(),
-
-                // Signature animations
-                sigShotForm: p.get_sig_shot_form(),
-                sigShotBase: p.get_sig_shot_base(),
             };
         } finally {
             deleteProxy(p);
@@ -214,6 +211,11 @@ export class WasmEngine implements IRosterEngine {
     setSigSkill(index: number, slot: number, value: number): void {
         const p = this.editor.get_player(index);
         try { p.set_sig_skill(slot, value); } finally { deleteProxy(p); }
+    }
+
+    setAnimationById(index: number, animationId: number, value: number): void {
+        const p = this.editor.get_player(index);
+        try { p.set_animation_by_id(animationId, value); } finally { deleteProxy(p); }
     }
 
     // -- Legacy named setters (backward compat) -----------------------------
@@ -251,16 +253,7 @@ export class WasmEngine implements IRosterEngine {
         } finally { deleteProxy(p); }
     }
 
-    setSignature(index: number, field: SignatureField, value: number): void {
-        const cppName = SIG_CPP_MAP[field];
-        if (!cppName) return;
-        const p = this.editor.get_player(index);
-        try {
-            const setter = `set_${cppName}` as keyof typeof p;
-            const fn = p[setter];
-            if (typeof fn === 'function') (fn as (v: number) => void).call(p, value);
-        } finally { deleteProxy(p); }
-    }
+
 
     // -- File I/O -----------------------------------------------------------
 

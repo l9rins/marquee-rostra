@@ -76,64 +76,117 @@ export interface TendencyMeta {
 }
 
 export const TENDENCY_DEFS: TendencyMeta[] = [
-    { id: 0, name: 'Stepback 3PT Shot', category: 'Shooting' },
-    { id: 1, name: 'Driving Layup', category: 'Driving' },
-    { id: 2, name: 'Standing Dunk', category: 'Driving' },
-    { id: 3, name: 'Driving Dunk', category: 'Driving' },
-    { id: 4, name: 'Flashy Dunk', category: 'Driving' },
-    { id: 5, name: 'Alley-Oop', category: 'Driving' },
-    { id: 6, name: 'Putback Dunk', category: 'Driving' },
-    { id: 7, name: 'Spin Layup', category: 'Driving' },
-    { id: 8, name: 'Hop Step Layup', category: 'Driving' },
-    { id: 9, name: 'Euro Step Layup', category: 'Driving' },
-    { id: 10, name: 'Floater', category: 'Driving' },
-    { id: 11, name: 'Triple Threat Pump Fake', category: 'Shooting' },
-    { id: 12, name: 'Triple Threat Jab Step', category: 'Shooting' },
-    { id: 13, name: 'Triple Threat Shoot', category: 'Shooting' },
-    { id: 14, name: 'Setup With Sizeup', category: 'Dribble Moves' },
-    { id: 15, name: 'Setup With Hesitation', category: 'Dribble Moves' },
-    { id: 16, name: 'No Setup Dribble', category: 'Dribble Moves' },
-    { id: 17, name: 'Drive Right', category: 'Driving' },
-    { id: 18, name: 'Drive Left', category: 'Driving' },
-    { id: 19, name: 'Spot Up Shot', category: 'Shooting' },
-    { id: 20, name: 'Off Screen Shot', category: 'Shooting' },
-    { id: 21, name: 'Roll vs Pop', category: 'Shooting' },
-    { id: 22, name: 'Use Glass', category: 'Shooting' },
-    { id: 23, name: 'Contested Shot Mid', category: 'Shooting' },
-    { id: 24, name: 'Contested Shot 3PT', category: 'Shooting' },
-    { id: 25, name: 'Stepback Mid', category: 'Shooting' },
-    { id: 26, name: 'Spin Jumper', category: 'Shooting' },
-    { id: 27, name: 'Transition Pull-Up', category: 'Shooting' },
-    { id: 28, name: 'Pull-Up Shot', category: 'Shooting' },
-    { id: 29, name: 'Use ISO Plays', category: 'Playmaking' },
-    { id: 30, name: 'Use Pick & Roll', category: 'Playmaking' },
-    { id: 31, name: 'Crash Boards', category: 'Rebounding' },
-    { id: 32, name: 'Dish To Open Man', category: 'Playmaking' },
-    { id: 33, name: 'Touch Pass', category: 'Playmaking' },
-    { id: 34, name: 'Post Up', category: 'Post Moves' },
-    { id: 35, name: 'Aggressive Backdown', category: 'Post Moves' },
-    { id: 36, name: 'Leave Post', category: 'Post Moves' },
-    { id: 37, name: 'Drop Step', category: 'Post Moves' },
-    { id: 38, name: 'Face Up', category: 'Post Moves' },
-    { id: 39, name: 'Back Down', category: 'Post Moves' },
-    { id: 40, name: 'Post Shots', category: 'Post Moves' },
-    { id: 41, name: 'Post Hook', category: 'Post Moves' },
-    { id: 42, name: 'Post Fadeaway', category: 'Post Moves' },
-    { id: 43, name: 'Shimmy Shot', category: 'Post Moves' },
-    { id: 44, name: 'Hop Shot', category: 'Post Moves' },
-    { id: 45, name: 'Flashy Passes', category: 'Playmaking' },
-    { id: 46, name: 'Throw Alley-Oop', category: 'Playmaking' },
-    { id: 47, name: 'Hard Foul', category: 'Defense' },
-    { id: 48, name: 'Take Charge', category: 'Defense' },
-    { id: 49, name: 'Play Pass Lane', category: 'Defense' },
-    { id: 50, name: 'On-Ball Steal', category: 'Defense' },
-    { id: 51, name: 'Contest Shot', category: 'Defense' },
-    { id: 52, name: 'Commit Foul', category: 'Defense' },
-    { id: 53, name: 'Fouling Tendency', category: 'Defense' },
-    { id: 54, name: 'Help Defense IQ', category: 'Defense' },
-    { id: 55, name: 'Block Shot', category: 'Defense' },
-    { id: 56, name: 'Shot Under Basket', category: 'Shooting' },
-    { id: 57, name: 'Close Shot', category: 'Shooting' },
+    { id: 0, name: 'Shot Tendency', category: 'Shooting' },
+    { id: 1, name: 'Inside Shots', category: 'Shooting' },
+    { id: 2, name: 'Close Shots', category: 'Shooting' },
+    { id: 3, name: 'Mid-Range Shots', category: 'Shooting' },
+    { id: 4, name: '3-Point Shots', category: 'Shooting' },
+    { id: 5, name: 'Putbacks', category: 'Inside' },
+    { id: 6, name: 'Drive Lane vs. Spot Up', category: 'Shooting Setup' },
+    { id: 7, name: 'Pull Up vs. Penetrate', category: 'Shooting Setup' },
+    { id: 8, name: 'Pump Fake', category: 'Shooting Setup' },
+    { id: 9, name: 'Triple Threat', category: 'Shooting Setup' },
+    { id: 10, name: 'Triple Threat Shot', category: 'Shooting Setup' },
+    { id: 11, name: 'No 3-Threat Moves', category: 'Shooting Setup' },
+    { id: 12, name: 'Straight Dribble', category: 'Dribbling' },
+    { id: 13, name: 'SizeUp', category: 'Dribbling' },
+    { id: 14, name: 'Hesitation', category: 'Dribbling' },
+    { id: 15, name: 'Drive Right vs. Left', category: 'Driving' },
+    { id: 16, name: 'Crossover', category: 'Dribbling' },
+    { id: 17, name: 'Spin', category: 'Dribbling' },
+    { id: 18, name: 'Step Back', category: 'Dribbling' },
+    { id: 19, name: 'Half Spin', category: 'Dribbling' },
+    { id: 20, name: 'Double Cross', category: 'Dribbling' },
+    { id: 21, name: 'Behind The Back', category: 'Dribbling' },
+    { id: 22, name: 'Hesitation Cross', category: 'Dribbling' },
+    { id: 23, name: 'In And Out', category: 'Dribbling' },
+    { id: 24, name: 'Simple Drive', category: 'Driving' },
+    { id: 25, name: 'Attack The Basket', category: 'Driving' },
+    { id: 26, name: 'Pass Out', category: 'Playmaking' },
+    { id: 27, name: 'Fadeaways', category: 'Shooting' },
+    { id: 28, name: 'Stepback Jumper', category: 'Shooting' },
+    { id: 29, name: 'Spin Jumper', category: 'Shooting' },
+    { id: 30, name: 'Dunk vs. LayUp', category: 'Inside' },
+    { id: 31, name: 'Alley-Oops', category: 'Inside' },
+    { id: 32, name: 'Use Glass', category: 'Shooting' },
+    { id: 33, name: 'Draw Foul', category: 'Driving' },
+    { id: 34, name: 'Crash', category: 'Rebounding' },
+    { id: 35, name: 'Pick & Roll vs. Fade', category: 'Playmaking' },
+    { id: 36, name: 'Post Up', category: 'Post Moves' },
+    { id: 37, name: 'Touches', category: 'Playmaking' },
+    { id: 38, name: 'Post Spin', category: 'Post Moves' },
+    { id: 39, name: 'Post Drive', category: 'Post Moves' },
+    { id: 40, name: 'Aggressive Backdown', category: 'Post Moves' },
+    { id: 41, name: 'Leave Post', category: 'Post Moves' },
+    { id: 42, name: 'Drop Step', category: 'Post Moves' },
+    { id: 43, name: 'Face Up', category: 'Post Moves' },
+    { id: 44, name: 'Back Down', category: 'Post Moves' },
+    { id: 45, name: 'Post Shots', category: 'Post Moves' },
+    { id: 46, name: 'Post Hook', category: 'Post Moves' },
+    { id: 47, name: 'Post Fadeaway', category: 'Post Moves' },
+    { id: 48, name: 'Shimmy Shot', category: 'Post Moves' },
+    { id: 49, name: 'Hop Shot', category: 'Post Moves' },
+    { id: 50, name: 'Flashy Passes', category: 'Playmaking' },
+    { id: 51, name: 'Throw Alley-Oop', category: 'Playmaking' },
+    { id: 52, name: 'Hard Foul', category: 'Defense' },
+    { id: 53, name: 'Take Charge', category: 'Defense' },
+    { id: 54, name: 'Play Pass Lane', category: 'Defense' },
+    { id: 55, name: 'On-Ball Steal', category: 'Defense' },
+    { id: 56, name: 'Contest Shot', category: 'Defense' },
+    { id: 57, name: 'Commit Foul', category: 'Defense' },
+];
+
+// ============================================================================
+// Animation definitions — all 40, matching RED MC
+// ============================================================================
+
+export interface AnimationMeta {
+    id: number;
+    name: string;
+    category: string;
+}
+
+export const ANIMATION_DEFS: AnimationMeta[] = [
+    { id: 0, name: 'Release Timing', category: 'Shots' },
+    { id: 1, name: 'Shooting Form', category: 'Shots' },
+    { id: 2, name: 'Shot Base', category: 'Shots' },
+    { id: 3, name: 'Fadeaway', category: 'Shots' },
+    { id: 4, name: 'Contested', category: 'Shots' },
+    { id: 5, name: 'Free Throw', category: 'Shots' },
+    { id: 6, name: 'Dribble Pull-Up', category: 'Momentum Shots' },
+    { id: 7, name: 'Spin Jumper', category: 'Momentum Shots' },
+    { id: 8, name: 'Hop Jumper', category: 'Momentum Shots' },
+    { id: 9, name: 'Post Fadeaway', category: 'Post Shots' },
+    { id: 10, name: 'Post Hook', category: 'Post Shots' },
+    { id: 11, name: 'Post Hop Shot', category: 'Post Shots' },
+    { id: 12, name: 'Post Shimmy Shot', category: 'Post Shots' },
+    { id: 13, name: 'Protect Jumper', category: 'Post Shots' },
+    { id: 14, name: 'Protect Spin Ch.', category: 'Post Shots' },
+    { id: 15, name: 'Iso Crossover', category: 'Dribble Moves' },
+    { id: 16, name: 'Iso Behind Back', category: 'Dribble Moves' },
+    { id: 17, name: 'Iso Spin', category: 'Dribble Moves' },
+    { id: 18, name: 'Iso Hesitation', category: 'Dribble Moves' },
+    { id: 19, name: 'Layup Package', category: 'Dunks & Layups' },
+    { id: 20, name: 'Go-To Dunk Package', category: 'Dunks & Layups' },
+    { id: 21, name: 'Dunk Package 2', category: 'Dunks & Layups' },
+    { id: 22, name: 'Dunk Package 3', category: 'Dunks & Layups' },
+    { id: 23, name: 'Dunk Package 4', category: 'Dunks & Layups' },
+    { id: 24, name: 'Dunk Package 5', category: 'Dunks & Layups' },
+    { id: 25, name: 'Dunk Package 6', category: 'Dunks & Layups' },
+    { id: 26, name: 'Dunk Package 7', category: 'Dunks & Layups' },
+    { id: 27, name: 'Dunk Package 8', category: 'Dunks & Layups' },
+    { id: 28, name: 'Dunk Package 9', category: 'Dunks & Layups' },
+    { id: 29, name: 'Dunk Package 10', category: 'Dunks & Layups' },
+    { id: 30, name: 'Dunk Package 11', category: 'Dunks & Layups' },
+    { id: 31, name: 'Dunk Package 12', category: 'Dunks & Layups' },
+    { id: 32, name: 'Dunk Package 13', category: 'Dunks & Layups' },
+    { id: 33, name: 'Dunk Package 14', category: 'Dunks & Layups' },
+    { id: 34, name: 'Dunk Package 15', category: 'Dunks & Layups' },
+    { id: 35, name: 'Pregame Intro', category: 'Signature Intros' },
+    { id: 36, name: 'Pregame 1', category: 'Signature Intros' },
+    { id: 37, name: 'Pregame 2', category: 'Signature Intros' },
+    { id: 38, name: 'Pre-Tip 1', category: 'Signature Intros' },
+    { id: 39, name: 'Pre-Tip 2', category: 'Signature Intros' },
 ];
 
 // ============================================================================
@@ -179,10 +232,6 @@ export type GearField =
     | 'gearHeadband'
     | 'gearSocks';
 
-export type SignatureField =
-    | 'sigShotForm'
-    | 'sigShotBase';
-
 // ============================================================================
 // Player data structure
 // ============================================================================
@@ -206,6 +255,9 @@ export interface PlayerData {
     // -- 5 Signature Skills (indexed by slot) --
     sigSkills: number[];     // 6-bit IDs (0-63)
 
+    // -- All 40 Animations (indexed by animation ID) --
+    animations: number[];
+
     // -- Legacy named fields (for backward compat with existing grid/UI) --
     threePointRating: number;
     midRangeRating: number;
@@ -219,10 +271,6 @@ export interface PlayerData {
     gearWristBand: number;
     gearHeadband: number;
     gearSocks: number;
-
-    // -- Signature Animations --
-    sigShotForm: number;
-    sigShotBase: number;
 
     // -- Legacy named tendencies (backward compat) --
     tendencyStepbackShot3Pt: number;
@@ -249,12 +297,12 @@ export interface IRosterEngine {
     setTendencyById(index: number, tendencyId: number, value: number): void;
     setHotZone(index: number, zoneId: number, value: number): void;
     setSigSkill(index: number, slot: number, value: number): void;
+    setAnimationById(index: number, animationId: number, value: number): void;
 
     // Legacy named setters (backward compat)
     setRating(index: number, field: RatingField, value: number): void;
     setTendency(index: number, field: TendencyField, value: number): void;
     setGear(index: number, field: GearField, value: number): void;
-    setSignature(index: number, field: SignatureField, value: number): void;
 
     saveAndRecalculateChecksum(): Uint8Array;
     getFileSize(): number;

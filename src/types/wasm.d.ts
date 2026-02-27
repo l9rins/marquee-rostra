@@ -60,11 +60,9 @@ export interface WasmPlayer {
   get_gear_socks(): number;
   set_gear_socks(val: number): void;
 
-  // -- Signatures --
-  get_sig_shot_form(): number;
-  set_sig_shot_form(val: number): void;
-  get_sig_shot_base(): number;
-  set_sig_shot_base(val: number): void;
+  // -- Signatures (byte-aligned) --
+  get_animation_by_id(id: number): number;
+  set_animation_by_id(id: number, val: number): void;
 
   /** Embind objects must be deleted to prevent memory leaks */
   delete(): void;

@@ -37,56 +37,14 @@ static constexpr size_t CFID_SIZE         = 2;     // 16-bit integer
 // Rating byte offsets (relative to player record start)
 // ============================================================================
 // IDs match the RatingID enum in RosterEditor.hpp.
-// Based on cross-referencing RED MC's field order with known offsets from
-// the 2K modding community and Leftos' PlayerReader.cs.
-//
-// Known anchors: Overall=30, Shot3PT=44, ShotMed=45, Dunk=46, Speed=48
-// The remaining skills fill the gaps and extend from offset 31 onward.
-// ============================================================================
-static constexpr size_t RATING_OFFSETS[RAT_COUNT] = {
-    30,     // RAT_OVERALL
-    31,     // RAT_SHOT_LOW_POST
-    32,     // RAT_SHOT_CLOSE
-    45,     // RAT_SHOT_MEDIUM (Mid-Range) — verified
-    44,     // RAT_SHOT_3PT — verified
-    33,     // RAT_SHOT_FT
-    46,     // RAT_DUNK — verified
-    34,     // RAT_STANDING_DUNK
-    35,     // RAT_LAYUP
-    36,     // RAT_STANDING_LAYUP
-    37,     // RAT_SPIN_LAYUP
-    38,     // RAT_EURO_LAYUP
-    39,     // RAT_HOP_LAYUP
-    40,     // RAT_RUNNER
-    41,     // RAT_STEP_THROUGH
-    42,     // RAT_SHOOT_IN_TRAFFIC
-    43,     // RAT_POST_FADEAWAY
-    47,     // RAT_POST_HOOK
-    49,     // RAT_SHOOT_OFF_DRIBBLE
-    50,     // RAT_BALL_HANDLING
-    51,     // RAT_OFF_HAND_DRIBBLE
-    52,     // RAT_BALL_SECURITY
-    53,     // RAT_PASS
-    54,     // RAT_BLOCK
-    55,     // RAT_STEAL
-    56,     // RAT_HANDS
-    57,     // RAT_ON_BALL_DEF
-    58,     // RAT_OFF_REBOUND
-    59,     // RAT_DEF_REBOUND
-    60,     // RAT_OFF_LOW_POST  (note: also happens to be POSITION_OFFSET in old code)
-    61,     // RAT_DEF_LOW_POST
-    62,     // RAT_OFF_AWARENESS
-    63,     // RAT_DEF_AWARENESS
-    64,     // RAT_CONSISTENCY
-    65,     // RAT_STAMINA
-    48,     // RAT_SPEED — verified
-    66,     // RAT_QUICKNESS
-    67,     // RAT_STRENGTH
-    68,     // RAT_VERTICAL
-    69,     // RAT_HUSTLE
-    70,     // RAT_DURABILITY
-    71,     // RAT_POTENTIAL
-    72,     // RAT_EMOTION
+// Based on cross-referencing RED MC's field order with empirical 2K14 offsets
+// shifting the original 2K13 structure by 379 bytes (Rating anchor = 409)
+static constexpr size_t RATING_OFFSETS[] = {
+    409, 410, 411, 424, 423, 412, 425, 413, 414, 415,
+    416, 417, 418, 419, 420, 421, 422, 426, 428, 429,
+    430, 431, 432, 433, 434, 435, 436, 437, 438, 439,
+    440, 441, 442, 443, 444, 427, 445, 446, 447, 448,
+    449, 450, 451
 };
 
 // Name table offsets (relative to player record start)
@@ -99,7 +57,7 @@ static constexpr size_t POSITION_OFFSET   = 60;    // Position byte
 // Default player record size (for 2K14 roster format)
 // This is the BINARY byte size of one player record in the .ROS file,
 // NOT the number of logical fields. Confirmed exactly 911 via hex analysis.
-static constexpr size_t DEFAULT_RECORD_SIZE = 911;
+static constexpr size_t DEFAULT_RECORD_SIZE = 1023;
 
 // Maximum expected player count
 static constexpr int MAX_PLAYERS = 1500;
@@ -305,8 +263,8 @@ void Player::write_bits_at(size_t byte_off, int bit_off, int count, uint32_t val
 // Tendency index N starts at (65, 6) + N * 8 bits.
 // ============================================================================
 
-static constexpr size_t TENDENCY_BASE_BYTE = 65;  // 14 + 51
-static constexpr int    TENDENCY_BASE_BIT  = 6;   // 3 + 3
+static constexpr size_t TENDENCY_BASE_BYTE = 144;
+static constexpr int    TENDENCY_BASE_BIT  = 3;
 
 // Helper to compute the (byte, bit) offset for tendency at index i
 static inline void tendency_offset(int index, size_t& byte_off, int& bit_off) {
@@ -327,14 +285,16 @@ int Player::get_tendency_by_id(int id) const {
     if (id < 0 || id >= 58) return 0;
     size_t bo; int bi;
     tendency_offset(id, bo, bi);
-    return static_cast<int>(read_bits_at(bo, bi, 8));
+    return static_cast<int>(read_bits_at(bo, bi, 8) & 127);
 }
 
 void Player::set_tendency_by_id(int id, int value) {
     if (id < 0 || id >= 58) return;
     size_t bo; int bi;
     tendency_offset(id, bo, bi);
-    write_bits_at(bo, bi, 8, static_cast<uint32_t>(value & 0xFF));
+    uint32_t current = read_bits_at(bo, bi, 8);
+    uint32_t msb = current & 128;
+    write_bits_at(bo, bi, 8, static_cast<uint32_t>((value & 127) | msb));
 }
 
 // -- Legacy named tendency accessors (delegate to data-driven) ----------------
@@ -514,27 +474,21 @@ void Player::set_gear_socks(int val) {
 }
 
 // ============================================================================
-// Signature Animations — byte-aligned at PortraitID + (193, 0)
+// Data-driven Animations (40 items)
 // ============================================================================
-// Leftos: MoveStreamToPortraitID → MoveStreamPosition(193, 0)
-// SigFT = byte, SigShtForm = byte, SigShtBase = byte (sequential)
+// RED MC 40 Animation sequence perfectly byte-aligned at record_offset + 193
+// All 40 animations are exactly 1-byte sequentially mapped
 
-static constexpr size_t SIG_BASE_BYTE = 193;
+static constexpr size_t ANIMATION_BASE_BYTE = 193;
 
-// SigShtForm is the 2nd byte at offset 193 (after SigFT)
-int Player::get_sig_shot_form() const {
-    return static_cast<int>(read_bits_at(SIG_BASE_BYTE + 1, 0, 8));
-}
-void Player::set_sig_shot_form(int val) {
-    write_bits_at(SIG_BASE_BYTE + 1, 0, 8, static_cast<uint32_t>(val & 0xFF));
+int Player::get_animation_by_id(int id) const {
+    if (id < 0 || id >= ANIM_COUNT) return 0;
+    return static_cast<int>(read_byte_at(ANIMATION_BASE_BYTE + id));
 }
 
-// SigShtBase is the 3rd byte at offset 193 (after SigFT + SigShtForm)
-int Player::get_sig_shot_base() const {
-    return static_cast<int>(read_bits_at(SIG_BASE_BYTE + 2, 0, 8));
-}
-void Player::set_sig_shot_base(int val) {
-    write_bits_at(SIG_BASE_BYTE + 2, 0, 8, static_cast<uint32_t>(val & 0xFF));
+void Player::set_animation_by_id(int id, int val) {
+    if (id < 0 || id >= ANIM_COUNT) return;
+    write_byte_at(ANIMATION_BASE_BYTE + id, static_cast<uint8_t>(val & 0xFF));
 }
 
 // ============================================================================
@@ -579,32 +533,37 @@ void RosterEditor::discover_player_table() {
         return;
     }
 
-    // Method 1: Use the known team table offset to locate the player table
-    // The player table typically follows the team table
-    size_t scan_start = TEAM_TABLE_MARKER;
-
-    // Scan forward from the team table marker looking for player record patterns
-    // Player records typically start with consistent header bytes
+    // Method 1: Scan the entire file for the first sequential player block.
+    // The player table in 2K14 starts relatively early (e.g. around 0x21CE3).
+    // We cannot rely on a single TEAM_TABLE_MARKER anchor.
     bool found = false;
     size_t candidate_offset = 0;
 
-    // Look for a region after the team table where we can find repeating
-    // record-sized blocks with valid CFID values
-    for (size_t offset = scan_start; offset < buffer_length_ - DEFAULT_RECORD_SIZE * 2; offset += 4) {
+    // Scan forward from the beginning of the buffer
+    for (size_t offset = 0; offset < buffer_length_ - DEFAULT_RECORD_SIZE * 3; offset += 4) {
         // Check if this could be the start of a player table:
-        // Look for two consecutive records that both have reasonable CFID values
+        // Look for three consecutive records that have reasonable CFID values.
+        // Note: The very first record (Index 0) is often a Null Player with CFID == 0.
+        // We must allow cfid1 to be 0.
         size_t cfid_offset_1 = offset + CFID_OFFSET;
         size_t cfid_offset_2 = offset + DEFAULT_RECORD_SIZE + CFID_OFFSET;
+        size_t cfid_offset_3 = offset + (DEFAULT_RECORD_SIZE * 2) + CFID_OFFSET;
 
-        if (cfid_offset_2 + 1 >= buffer_length_) break;
+        if (cfid_offset_3 + 1 >= buffer_length_) break;
 
         uint16_t cfid1 = static_cast<uint16_t>(buffer_[cfid_offset_1])
                        | (static_cast<uint16_t>(buffer_[cfid_offset_1 + 1]) << 8);
         uint16_t cfid2 = static_cast<uint16_t>(buffer_[cfid_offset_2])
                        | (static_cast<uint16_t>(buffer_[cfid_offset_2 + 1]) << 8);
+        uint16_t cfid3 = static_cast<uint16_t>(buffer_[cfid_offset_3])
+                       | (static_cast<uint16_t>(buffer_[cfid_offset_3 + 1]) << 8);
 
-        // Heuristic: valid CFIDs are typically in range 0–10000
-        if (cfid1 > 0 && cfid1 < 10000 && cfid2 > 0 && cfid2 < 10000) {
+        // Heuristic: valid CFIDs are typically in range 0–10000.
+        // Allow Index 0 to be exactly 0. Index 1 and 2 must be valid actual CFIDs.
+        // Note: CFIDs around 1013 (LeBron) are common.
+        if ((cfid1 == 0 || (cfid1 > 0 && cfid1 < 10000)) &&
+             (cfid2 > 0 && cfid2 < 10000) &&
+             (cfid3 > 0 && cfid3 < 10000)) {
             candidate_offset = offset;
             found = true;
             break;

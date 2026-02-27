@@ -68,11 +68,9 @@ interface Player {
     long get_gear_socks();
     void set_gear_socks(long val);
 
-    // Signatures (byte-aligned)
-    long get_sig_shot_form();
-    void set_sig_shot_form(long val);
-    long get_sig_shot_base();
-    void set_sig_shot_base(long val);
+    // -- Signatures (byte-aligned) --
+    long get_animation_by_id(long id);
+    void set_animation_by_id(long id, long val);
 };
 
 interface RosterEditor {
