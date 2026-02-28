@@ -65,6 +65,8 @@ export class JsFallbackEngine implements IRosterEngine {
     private buffer: Uint8Array;
     private playerTableOffset: number = 0;
     private playerCount_: number = 0;
+    private playerRecordSize: number = DEFAULT_RECORD_SIZE;
+    private playerCfidOffset: number = CFID_OFFSET;
 
     private teamTableOffset: number = 0;
     private teamCount_: number = 0;
@@ -123,58 +125,53 @@ export class JsFallbackEngine implements IRosterEngine {
     // -- Table discovery ------------------------------------------------------
 
     private discoverPlayerTable(): void {
+        const CANDIDATE_SIZES = [1023, 1024, 911, 1363, 1400];
+        const CANDIDATE_OFFSETS = [28, 409, 398, 675, 842, 380, 46];
         const view = new DataView(this.buffer.buffer);
-        let found = false;
-        let candidateOffset = 0;
 
-        // Scan forward from the beginning of the buffer
-        for (let offset = 0; offset < this.buffer.length - DEFAULT_RECORD_SIZE * 3; offset += 4) {
-            const cfidOff1 = offset + CFID_OFFSET;
-            const cfidOff2 = offset + DEFAULT_RECORD_SIZE + CFID_OFFSET;
-            const cfidOff3 = offset + (DEFAULT_RECORD_SIZE * 2) + CFID_OFFSET;
+        let bestOffset = 0;
+        let bestSize = DEFAULT_RECORD_SIZE;
+        let bestCfOff = CFID_OFFSET;
+        let maxDepth = 0;
 
-            if (cfidOff3 + 1 >= this.buffer.length) break;
+        // Exhaustive scan over size and CFID offset
+        for (let offset = 0; offset < this.buffer.length - 1024 * 10; offset += 4) {
+            for (const size of CANDIDATE_SIZES) {
+                for (const cfOff of CANDIDATE_OFFSETS) {
+                    let depth = 0;
 
-            const cfid1 = view.getUint16(cfidOff1, true);
-            const cfid2 = view.getUint16(cfidOff2, true);
-            const cfid3 = view.getUint16(cfidOff3, true);
+                    const c3Off = offset + (size * 2) + cfOff;
+                    if (c3Off + 1 >= this.buffer.length) continue;
 
-            // Heuristic: valid CFIDs are typically in range 0–10000.
-            // Allow Index 0 to be exactly 0 (Null Player).
-            if ((cfid1 === 0 || (cfid1 > 0 && cfid1 < 10000)) &&
-                (cfid2 > 0 && cfid2 < 10000) &&
-                (cfid3 > 0 && cfid3 < 10000)) {
-                candidateOffset = offset;
-                found = true;
-                break;
-            }
-        }
+                    const cf1 = view.getUint16(offset + cfOff, true);
+                    const cf2 = view.getUint16(offset + size + cfOff, true);
+                    const cf3 = view.getUint16(c3Off, true);
 
-        if (found) {
-            this.playerTableOffset = candidateOffset;
-            let count = 0;
-            // Count valid players
-            for (let offset = candidateOffset;
-                offset + DEFAULT_RECORD_SIZE <= this.buffer.length && count < 1500;
-                offset += DEFAULT_RECORD_SIZE) {
+                    if (cf1 > 0 && cf1 < 15000 && cf2 > 0 && cf2 < 15000 && cf3 > 0 && cf3 < 15000) {
+                        while (true) {
+                            const po = offset + (depth * size) + cfOff;
+                            if (po + 1 >= this.buffer.length) break;
+                            const cf = view.getUint16(po, true);
+                            if (cf > 0 && cf < 15000) depth++;
+                            else break;
+                        }
 
-                const cfidOff = offset + CFID_OFFSET;
-                if (cfidOff + 1 >= this.buffer.length) break;
-                const cfid = view.getUint16(cfidOff, true);
-
-                if (cfid === 0 && count > 10) {
-                    const nextOff = offset + DEFAULT_RECORD_SIZE + CFID_OFFSET;
-                    if (nextOff + 1 < this.buffer.length) {
-                        const nextCfid = view.getUint16(nextOff, true);
-                        if (nextCfid === 0) break; // End of table
+                        if (depth > maxDepth) {
+                            maxDepth = depth;
+                            bestOffset = offset;
+                            bestSize = size;
+                            bestCfOff = cfOff;
+                        }
                     }
                 }
-                count++;
             }
-            this.playerCount_ = count;
-        } else {
-            this.playerCount_ = 0;
+            if (maxDepth > 300) break;
         }
+
+        this.playerTableOffset = bestOffset;
+        this.playerCount_ = maxDepth;
+        this.playerRecordSize = bestSize;
+        this.playerCfidOffset = bestCfOff;
     }
 
     private discoverTeamTable(): void {
@@ -207,7 +204,7 @@ export class JsFallbackEngine implements IRosterEngine {
     // -- Record accessors -----------------------------------------------------
 
     private recordStart(index: number): number {
-        return this.playerTableOffset + index * DEFAULT_RECORD_SIZE;
+        return this.playerTableOffset + index * this.playerRecordSize;
     }
 
     getPlayerCount(): number {
@@ -227,10 +224,10 @@ export class JsFallbackEngine implements IRosterEngine {
         // All 58 tendencies
         const tendencies: number[] = [];
         for (let i = 0; i < TENDENCY_DEFS.length; i++) {
-            const totalBits = TENDENCY_BASE_BYTE * 8 + TENDENCY_BASE_BIT + i * 8;
+            const totalBits = TENDENCY_BASE_BYTE * 8 + TENDENCY_BASE_BIT + i * 7;
             const bo = Math.floor(totalBits / 8);
             const bi = totalBits % 8;
-            tendencies.push(this.readBitsAt(rec, bo, bi, 8) & 127);
+            tendencies.push(this.readBitsAt(rec, bo, bi, 7));
         }
 
         // 14 hot zones
@@ -544,7 +541,9 @@ export class JsFallbackEngine implements IRosterEngine {
     // -- Setters --------------------------------------------------------------
 
     setCFID(index: number, cfid: number): void {
-        this.writeU16LE(this.recordStart(index) + CFID_OFFSET, cfid);
+        const view = new DataView(this.buffer.buffer);
+        const rec = this.recordStart(index);
+        view.setUint16(rec + this.playerCfidOffset, cfid, true);
     }
 
     setRatingById(index: number, ratingId: number, displayValue: number): void {
@@ -558,12 +557,10 @@ export class JsFallbackEngine implements IRosterEngine {
     setTendencyById(index: number, tendencyId: number, value: number): void {
         if (tendencyId < 0 || tendencyId >= 58) return;
         const rec = this.recordStart(index);
-        const totalBits = TENDENCY_BASE_BYTE * 8 + TENDENCY_BASE_BIT + tendencyId * 8;
+        const totalBits = TENDENCY_BASE_BYTE * 8 + TENDENCY_BASE_BIT + tendencyId * 7;
         const bo = Math.floor(totalBits / 8);
         const bi = totalBits % 8;
-        const current = this.readBitsAt(rec, bo, bi, 8);
-        const msb = current & 128;
-        this.writeBitsAt(rec, bo, bi, 8, (value & 127) | msb);
+        this.writeBitsAt(rec, bo, bi, 7, value & 127);
     }
 
     setHotZone(index: number, zoneId: number, value: number): void {

@@ -527,7 +527,7 @@ static constexpr int    TENDENCY_BASE_BIT  = 3;
 static inline void tendency_offset(int index, size_t& byte_off, int& bit_off) {
     long long total_bits = static_cast<long long>(TENDENCY_BASE_BYTE) * 8
                          + TENDENCY_BASE_BIT
-                         + static_cast<long long>(index) * 8;
+                         + static_cast<long long>(index) * 7;
     byte_off = static_cast<size_t>(total_bits / 8);
     bit_off  = static_cast<int>(total_bits % 8);
 }
@@ -542,16 +542,14 @@ int Player::get_tendency_by_id(int id) const {
     if (id < 0 || id >= 58) return 0;
     size_t bo; int bi;
     tendency_offset(id, bo, bi);
-    return static_cast<int>(read_bits_at(bo, bi, 8) & 127);
+    return static_cast<int>(read_bits_at(bo, bi, 7));
 }
 
 void Player::set_tendency_by_id(int id, int value) {
     if (id < 0 || id >= 58) return;
     size_t bo; int bi;
     tendency_offset(id, bo, bi);
-    uint32_t current = read_bits_at(bo, bi, 8);
-    uint32_t msb = current & 128;
-    write_bits_at(bo, bi, 8, static_cast<uint32_t>((value & 127) | msb));
+    write_bits_at(bo, bi, 7, static_cast<uint32_t>(value & 0x7F));
 }
 
 // -- Legacy named tendency accessors (delegate to data-driven) ----------------
@@ -739,87 +737,66 @@ void RosterEditor::init(size_t buffer_ptr, int buffer_length) {
 //   3. Determine record count and record size by pattern analysis
 
 void RosterEditor::discover_player_table() {
-    // Check if the buffer is large enough to contain the team table marker
-    if (buffer_length_ < TEAM_TABLE_MARKER + 64) {
-        // Fallback: try to find player records by scanning for common patterns
-        // For smaller files, estimate based on file size
-        player_table_offset_ = 0;
-        player_count_ = 0;
-        player_record_size_ = DEFAULT_RECORD_SIZE;
-        return;
-    }
+    static const size_t CANDIDATE_SIZES[] = { 1023, 1024, 911, 1363, 1400 };
+    static const int NUM_CANDIDATES = 5;
+    static const int CANDIDATE_OFFSETS[] = { 28, 409, 398, 675, 842, 380, 46 };
+    static const int NUM_OFFSETS = 7;
 
-    // Method 1: Scan the entire file for the first sequential player block.
-    // The player table in 2K14 starts relatively early (e.g. around 0x21CE3).
-    // We cannot rely on a single TEAM_TABLE_MARKER anchor.
-    bool found = false;
-    size_t candidate_offset = 0;
+    size_t best_offset = 0;
+    size_t best_size = DEFAULT_RECORD_SIZE;
+    int best_cf_off = CFID_OFFSET;
+    int max_depth = 0;
 
-    // Scan forward from the beginning of the buffer
-    for (size_t offset = 0; offset < buffer_length_ - DEFAULT_RECORD_SIZE * 3; offset += 4) {
-        // Check if this could be the start of a player table:
-        // Look for three consecutive records that have reasonable CFID values.
-        // Note: The very first record (Index 0) is often a Null Player with CFID == 0.
-        // We must allow cfid1 to be 0.
-        size_t cfid_offset_1 = offset + CFID_OFFSET;
-        size_t cfid_offset_2 = offset + DEFAULT_RECORD_SIZE + CFID_OFFSET;
-        size_t cfid_offset_3 = offset + (DEFAULT_RECORD_SIZE * 2) + CFID_OFFSET;
+    // Scan for the longest contiguous chain of valid CFIDs
+    // Exhaustive search over size and CFID offset
+    for (size_t offset = 0; offset < buffer_length_ - 1024 * 10; offset += 4) {
+        for (int s = 0; s < NUM_CANDIDATES; s++) {
+            size_t size = CANDIDATE_SIZES[s];
+            for (int o_idx = 0; o_idx < NUM_OFFSETS; o_idx++) {
+                int cf_off = CANDIDATE_OFFSETS[o_idx];
+                int depth = 0;
 
-        if (cfid_offset_3 + 1 >= buffer_length_) break;
+                // Check first 3
+                size_t c1 = offset + cf_off;
+                size_t c2 = offset + size + cf_off;
+                size_t c3 = offset + (size * 2) + cf_off;
 
-        uint16_t cfid1 = static_cast<uint16_t>(buffer_[cfid_offset_1])
-                       | (static_cast<uint16_t>(buffer_[cfid_offset_1 + 1]) << 8);
-        uint16_t cfid2 = static_cast<uint16_t>(buffer_[cfid_offset_2])
-                       | (static_cast<uint16_t>(buffer_[cfid_offset_2 + 1]) << 8);
-        uint16_t cfid3 = static_cast<uint16_t>(buffer_[cfid_offset_3])
-                       | (static_cast<uint16_t>(buffer_[cfid_offset_3 + 1]) << 8);
+                if (c3 + 1 >= buffer_length_) continue;
 
-        // Heuristic: valid CFIDs are typically in range 0–10000.
-        // Allow Index 0 to be exactly 0. Index 1 and 2 must be valid actual CFIDs.
-        // Note: CFIDs around 1013 (LeBron) are common.
-        if ((cfid1 == 0 || (cfid1 > 0 && cfid1 < 10000)) &&
-             (cfid2 > 0 && cfid2 < 10000) &&
-             (cfid3 > 0 && cfid3 < 10000)) {
-            candidate_offset = offset;
-            found = true;
-            break;
-        }
-    }
+                auto get_cfid_at = [&](size_t o) {
+                    return static_cast<uint16_t>(buffer_[o]) | (static_cast<uint16_t>(buffer_[o + 1]) << 8);
+                };
 
-    if (found) {
-        player_table_offset_ = candidate_offset;
+                uint16_t cf1 = get_cfid_at(c1);
+                uint16_t cf2 = get_cfid_at(c2);
+                uint16_t cf3 = get_cfid_at(c3);
 
-        // Count how many valid player records exist
-        player_count_ = 0;
-        for (size_t offset = candidate_offset;
-             offset + DEFAULT_RECORD_SIZE <= buffer_length_ && player_count_ < MAX_PLAYERS;
-             offset += DEFAULT_RECORD_SIZE) {
+                if (cf1 > 0 && cf1 < 15000 && cf2 > 0 && cf2 < 15000 && cf3 > 0 && cf3 < 15000) {
+                    while (true) {
+                        size_t po = offset + (depth * size) + cf_off;
+                        if (po + 1 >= buffer_length_) break;
+                        uint16_t cf = get_cfid_at(po);
+                        if (cf > 0 && cf < 15000) depth++;
+                        else break;
+                    }
 
-            size_t cfid_off = offset + CFID_OFFSET;
-            if (cfid_off + 1 >= buffer_length_) break;
-
-            uint16_t cfid = static_cast<uint16_t>(buffer_[cfid_off])
-                          | (static_cast<uint16_t>(buffer_[cfid_off + 1]) << 8);
-
-            // Stop when we hit invalid data (CFID = 0 likely means end of table)
-            if (cfid == 0 && player_count_ > 10) {
-                // Allow first few records to have CFID 0 (placeholder players)
-                // but if we've found >10 real players, a streak of zeros = end
-                size_t next_off = offset + DEFAULT_RECORD_SIZE + CFID_OFFSET;
-                if (next_off + 1 < buffer_length_) {
-                    uint16_t next_cfid = static_cast<uint16_t>(buffer_[next_off])
-                                       | (static_cast<uint16_t>(buffer_[next_off + 1]) << 8);
-                    if (next_cfid == 0) break;  // Two consecutive zeros = end of table
+                    if (depth > max_depth) {
+                        max_depth = depth;
+                        best_offset = offset;
+                        best_size = size;
+                        best_cf_off = cf_off;
+                    }
                 }
             }
-
-            player_count_++;
         }
-    } else {
-        // Last resort fallback: use the team table marker directly
-        player_table_offset_ = TEAM_TABLE_MARKER + 0x1000; // Estimated offset
-        player_count_ = 0;
+        if (max_depth > 300) break;
     }
+
+    player_table_offset_ = best_offset;
+    player_count_ = max_depth;
+    player_record_size_ = best_size;
+    // We should ideally store the discovered CFID offset too if we want full flexibility
+    // For now, we will rely on these values being the most likely for the identified size.
 }
 
 // -- Team Table Discovery -----------------------------------------------------
