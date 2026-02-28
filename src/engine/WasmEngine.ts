@@ -7,6 +7,7 @@
 
 import type { IRosterEngine, PlayerData, RatingField, TendencyField, TeamProperty } from './RosterEngine';
 import { POSITION_NAMES, RATING_DEFS, TENDENCY_DEFS, ANIMATION_DEFS, VITAL_TEAM_ID1, VITAL_TEAM_ID2 } from './RosterEngine';
+import { ROSTER_NAMES } from './RosterNames';
 import type { RosterEditorModule, WasmRosterEditor } from '../types/wasm';
 
 /** Rating field → C++ getter/setter name suffix (legacy) */
@@ -148,11 +149,21 @@ export class WasmEngine implements IRosterEngine {
                 vitals.push(p.get_vital_by_id(i));
             }
 
+            // Intercept Names and translate via Dictionary
+            const rawFirstName = p.get_first_name() || '';
+            const rawLastName = p.get_last_name() || '';
+
+            const firstId = parseInt(rawFirstName, 10);
+            const lastId = parseInt(rawLastName, 10);
+
+            const firstName = !isNaN(firstId) ? (ROSTER_NAMES[firstId] || rawFirstName) : rawFirstName;
+            const lastName = !isNaN(lastId) ? (ROSTER_NAMES[lastId] || rawLastName) : rawLastName;
+
             return {
                 index,
                 cfid: p.get_cfid(),
-                firstName: p.get_first_name() || 'Player',
-                lastName: p.get_last_name() || `#${index}`,
+                firstName: firstName,
+                lastName: lastName,
                 position: POSITION_NAMES[vitals[0]] ?? `${vitals[0]}`,
 
                 // Data-driven arrays

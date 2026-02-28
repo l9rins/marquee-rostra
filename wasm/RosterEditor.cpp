@@ -48,7 +48,7 @@ static constexpr size_t RATING_OFFSETS[] = {
 };
 
 // Name table offsets (relative to player record start)
-static constexpr size_t FIRST_NAME_OFFSET = 52;    // Offset to first name pointer
+static constexpr size_t FIRST_NAME_OFFSET = 63;    // Offset to first name pointer
 static constexpr size_t LAST_NAME_OFFSET  = 56;    // Offset to last name pointer
 
 // Position info
@@ -168,14 +168,14 @@ std::string Player::get_first_name() const {
     // The offsets hold 16-bit Name IDs, not ASCII. Attempting to read_string_at()
     // on these integers produces garbage. Until we map the global NameData.txt
     // dictionary, return the CFID as a clean identifier.
-    int cfid = get_cfid();
-    if (cfid == 0) return "Empty Slot";
-    return "CFID: " + std::to_string(cfid);
+    uint16_t id = read_u16_le(FIRST_NAME_OFFSET);
+    return std::to_string(id);
 }
 
 std::string Player::get_last_name() const {
     // Name IDs, not ASCII — return empty until Name Dictionary is mapped
-    return "";
+    uint16_t id = read_u16_le(LAST_NAME_OFFSET);
+    return std::to_string(id);
 }
 
 // -- Position -----------------------------------------------------------------
