@@ -12,7 +12,7 @@
 import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import type { IRosterEngine, PlayerData, EditableField, RatingField } from '../engine/RosterEngine';
 import {
-    RATING_DEFS, TENDENCY_DEFS, HOT_ZONE_NAMES, HOT_ZONE_VALUES, ANIMATION_DEFS, GEAR_DEFS,
+    RATING_DEFS, TENDENCY_DEFS, HOT_ZONE_NAMES, HOT_ZONE_VALUES, ANIMATION_DEFS, GEAR_DEFS, formatAnimationValue,
     VITAL_POSITION, VITAL_HEIGHT, VITAL_WEIGHT, VITAL_BIRTH_DAY, VITAL_BIRTH_MONTH, VITAL_BIRTH_YEAR, VITAL_HAND, VITAL_YEARS_PRO,
     PLAY_STYLE_NAMES, PLAY_TYPE_NAMES, CONTRACT_OPT_NAMES,
     VITAL_JERSEY_NUM, VITAL_TEAM_ID1, VITAL_TEAM_ID2, VITAL_CONTRACT_Y1,
@@ -25,6 +25,7 @@ import {
     VITAL_PEAK_AGE_START, VITAL_PEAK_AGE_END, VITAL_POTENTIAL, VITAL_LOYALTY, VITAL_FINANCIAL_SECURITY, VITAL_PLAY_FOR_WINNER,
     BODY_TYPE_NAMES, MUSCLE_TONE_NAMES, HAIR_COLOR_NAMES, EYE_COLOR_NAMES, HAIR_TYPE_NAMES, NICKNAME_NAMES, INJURY_TYPE_NAMES, SIG_SKILL_NAMES
 } from '../engine/RosterEngine';
+import { getAnimEnumMap } from '../engine/RosterEnums';
 import { createEngine } from '../engine/createEngine';
 import { RadarChart } from './RadarChart';
 import { toast } from 'sonner';
@@ -1426,23 +1427,24 @@ export default function RosterDashboard() {
                                                     <AccordionContent className="space-y-3 pb-4">
                                                         {defs.map((t) => {
                                                             const rawVal = profilePlayer.tendencies[t.id];
-                                                            const displayVal = Math.round((rawVal / 255) * 100);
+                                                            // Tendencies are 0-127 (7-bit values, MSB is category flag)
+                                                            const displayVal = Math.round((rawVal / 127) * 100);
                                                             return (
                                                                 <div key={t.id} className="space-y-1">
                                                                     <div className="flex justify-between items-center">
                                                                         <label className="text-sm font-medium truncate">{t.name}</label>
                                                                         <span className="font-mono text-xs font-bold text-primary min-w-[32px] text-right">
-                                                                            {displayVal}
+                                                                            {rawVal}
                                                                         </span>
                                                                     </div>
                                                                     <Slider
                                                                         min={0}
-                                                                        max={100}
+                                                                        max={127}
                                                                         step={1}
-                                                                        value={[displayVal]}
+                                                                        value={[rawVal]}
                                                                         onValueChange={(val) => {
                                                                             if (!engine) return;
-                                                                            const newRaw = Math.round((val[0] / 100) * 255);
+                                                                            const newRaw = Math.max(0, Math.min(127, val[0]));
                                                                             engine.setTendencyById(profilePlayer.index, t.id, newRaw);
                                                                             const updated = engine.getPlayer(profilePlayer.index);
                                                                             setPlayers(prev => prev.map(p => p.index === profilePlayer.index ? updated : p));
@@ -1551,28 +1553,59 @@ export default function RosterDashboard() {
                                                     <div className="grid grid-cols-2 gap-2 mb-4">
                                                         {defs.map((a) => {
                                                             const val = profilePlayer.animations[a.id];
+                                                            const enumMap = getAnimEnumMap(a.id);
                                                             return (
                                                                 <div key={a.id} className="flex flex-col bg-background/50 border border-border/50 rounded-md p-2 hover:bg-muted/50 transition-colors">
                                                                     <span className="text-[10px] font-semibold text-muted-foreground leading-none mb-1.5 truncate" title={a.name}>
                                                                         {a.name}
                                                                     </span>
-                                                                    <div className="flex justify-between items-center">
-                                                                        <span className="text-xs text-muted-foreground/50">ID {a.id}</span>
-                                                                        <Input
-                                                                            type="number"
-                                                                            min={0}
-                                                                            max={255}
-                                                                            className="h-6 w-16 font-mono text-xs text-right p-1 bg-background"
-                                                                            value={val}
-                                                                            onChange={(e) => {
+                                                                    {enumMap ? (
+                                                                        <Select
+                                                                            value={val.toString()}
+                                                                            onValueChange={(v) => {
                                                                                 if (!engine) return;
-                                                                                const newVal = Math.max(0, Math.min(255, parseInt(e.target.value, 10) || 0));
+                                                                                const newVal = parseInt(v, 10);
                                                                                 engine.setAnimationById(profilePlayer.index, a.id, newVal);
                                                                                 const updated = engine.getPlayer(profilePlayer.index);
                                                                                 setPlayers(prev => prev.map(p => p.index === profilePlayer.index ? updated : p));
                                                                             }}
-                                                                        />
-                                                                    </div>
+                                                                        >
+                                                                            <SelectTrigger className="h-7 w-full text-xs font-mono bg-background">
+                                                                                <SelectValue placeholder="Select...">
+                                                                                    {enumMap[val] ?? `#${val}`}
+                                                                                </SelectValue>
+                                                                            </SelectTrigger>
+                                                                            <SelectContent className="max-h-60">
+                                                                                {Object.entries(enumMap).map(([k, label]) => (
+                                                                                    <SelectItem key={k} value={k}>{label}</SelectItem>
+                                                                                ))}
+                                                                            </SelectContent>
+                                                                        </Select>
+                                                                    ) : (
+                                                                        <div className="flex justify-between items-center">
+                                                                            <span className="text-xs text-muted-foreground/50">
+                                                                                {val === 255 ? (
+                                                                                    <Badge variant="outline" className="text-[9px] px-1.5 py-0 border-primary/30 text-primary">Default</Badge>
+                                                                                ) : (
+                                                                                    <>ID {a.id}</>
+                                                                                )}
+                                                                            </span>
+                                                                            <Input
+                                                                                type="number"
+                                                                                min={0}
+                                                                                max={255}
+                                                                                className="h-6 w-16 font-mono text-xs text-right p-1 bg-background"
+                                                                                value={val}
+                                                                                onChange={(e) => {
+                                                                                    if (!engine) return;
+                                                                                    const newVal = Math.max(0, Math.min(255, parseInt(e.target.value, 10) || 0));
+                                                                                    engine.setAnimationById(profilePlayer.index, a.id, newVal);
+                                                                                    const updated = engine.getPlayer(profilePlayer.index);
+                                                                                    setPlayers(prev => prev.map(p => p.index === profilePlayer.index ? updated : p));
+                                                                                }}
+                                                                            />
+                                                                        </div>
+                                                                    )}
                                                                 </div>
                                                             );
                                                         })}

@@ -189,6 +189,14 @@ export const ANIMATION_DEFS: AnimationMeta[] = [
     { id: 39, name: 'Pre-Tip 2', category: 'Signature Intros' },
 ];
 
+/** Raw animation value representing "Default" (no custom animation assigned) */
+export const ANIMATION_DEFAULT_VALUE = 255;
+
+/** Returns display text for an animation's raw integer value */
+export function formatAnimationValue(raw: number): string {
+    return raw === ANIMATION_DEFAULT_VALUE ? 'Default' : String(raw);
+}
+
 // ============================================================================
 // Hot Zone definitions — 14 court zones
 // ============================================================================

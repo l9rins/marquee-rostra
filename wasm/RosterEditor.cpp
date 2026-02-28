@@ -59,8 +59,8 @@ static constexpr size_t POSITION_OFFSET   = 60;    // Position byte
 // NOT the number of logical fields. Confirmed exactly 911 via hex analysis.
 static constexpr size_t DEFAULT_RECORD_SIZE = 1023;
 
-// Maximum expected player count
-static constexpr int MAX_PLAYERS = 1500;
+// Maximum expected player count — NBA 2K14 database is exactly 1664 slots
+static constexpr int MAX_PLAYERS = 1664;
 
 // ============================================================================
 // Player Implementation
@@ -164,63 +164,18 @@ void Player::set_overall_rating(int r)       { set_rating_by_id(RAT_OVERALL, r);
 // -- Name reading -------------------------------------------------------------
 
 std::string Player::get_first_name() const {
-    // Read name from name table pointer
-    size_t abs_offset = record_offset_ + FIRST_NAME_OFFSET;
-    if (abs_offset + 3 >= buffer_length_) return "";
-
-    // Read 4-byte LE pointer to name string
-    uint32_t name_ptr =
-        static_cast<uint32_t>(buffer_[abs_offset]) |
-        (static_cast<uint32_t>(buffer_[abs_offset + 1]) << 8) |
-        (static_cast<uint32_t>(buffer_[abs_offset + 2]) << 16) |
-        (static_cast<uint32_t>(buffer_[abs_offset + 3]) << 24);
-
-    if (name_ptr == 0 || name_ptr >= buffer_length_) {
-        // If the pointer is invalid, try reading inline ASCII starting at the offset
-        std::string name;
-        for (size_t i = abs_offset; i < buffer_length_ && i < abs_offset + 32; ++i) {
-            char c = static_cast<char>(buffer_[i]);
-            if (c < 32 || c > 126) break;
-            name += c;
-        }
-        return name.empty() ? "Player" : name;
-    }
-
-    // Read null-terminated string at pointer location
-    std::string name;
-    for (size_t i = name_ptr; i < buffer_length_ && i < name_ptr + 64; ++i) {
-        if (buffer_[i] == 0) break;
-        name += static_cast<char>(buffer_[i]);
-    }
-    return name.empty() ? "Player" : name;
+    // ARCHITECTURAL NOTE: Text names are NOT stored in the 1023-byte player record.
+    // The offsets hold 16-bit Name IDs, not ASCII. Attempting to read_string_at()
+    // on these integers produces garbage. Until we map the global NameData.txt
+    // dictionary, return the CFID as a clean identifier.
+    int cfid = get_cfid();
+    if (cfid == 0) return "Empty Slot";
+    return "CFID: " + std::to_string(cfid);
 }
 
 std::string Player::get_last_name() const {
-    size_t abs_offset = record_offset_ + LAST_NAME_OFFSET;
-    if (abs_offset + 3 >= buffer_length_) return "";
-
-    uint32_t name_ptr =
-        static_cast<uint32_t>(buffer_[abs_offset]) |
-        (static_cast<uint32_t>(buffer_[abs_offset + 1]) << 8) |
-        (static_cast<uint32_t>(buffer_[abs_offset + 2]) << 16) |
-        (static_cast<uint32_t>(buffer_[abs_offset + 3]) << 24);
-
-    if (name_ptr == 0 || name_ptr >= buffer_length_) {
-        std::string name;
-        for (size_t i = abs_offset; i < buffer_length_ && i < abs_offset + 32; ++i) {
-            char c = static_cast<char>(buffer_[i]);
-            if (c < 32 || c > 126) break;
-            name += c;
-        }
-        return name.empty() ? "Unknown" : name;
-    }
-
-    std::string name;
-    for (size_t i = name_ptr; i < buffer_length_ && i < name_ptr + 64; ++i) {
-        if (buffer_[i] == 0) break;
-        name += static_cast<char>(buffer_[i]);
-    }
-    return name.empty() ? "Unknown" : name;
+    // Name IDs, not ASCII — return empty until Name Dictionary is mapped
+    return "";
 }
 
 // -- Position -----------------------------------------------------------------
@@ -277,7 +232,7 @@ int Player::get_vital_by_id(int id) const {
         case VITAL_DRAFT_ROUND:  return read_bits_at(49, 0, 4);
         case VITAL_DRAFT_PICK:   return read_bits_at(49, 4, 6);
         case VITAL_DRAFT_TEAM:   return read_byte_at(51);
-        case VITAL_NICKNAME,     return read_byte_at(54);
+        case VITAL_NICKNAME:     return read_byte_at(54);
         case VITAL_PLAY_INITIATOR: return read_bits_at(96, 0, 1);
         case VITAL_GOES_TO_3PT:  return read_bits_at(96, 1, 1);
         case VITAL_PEAK_AGE_START: return read_byte_at(60);
@@ -457,19 +412,19 @@ std::string Team::get_abbr() const {
 
 void Team::set_name(const std::string& name) {
     for(int i=0; i<32; i++) {
-        write_byte_at(33 + i, i < name.length() ? static_cast<uint8_t>(name[i]) : 0);
+        write_byte_at(33 + i, i < static_cast<int>(name.length()) ? static_cast<uint8_t>(name[i]) : 0);
     }
 }
 
 void Team::set_city(const std::string& city) {
     for(int i=0; i<32; i++) {
-        write_byte_at(1 + i, i < city.length() ? static_cast<uint8_t>(city[i]) : 0);
+        write_byte_at(1 + i, i < static_cast<int>(city.length()) ? static_cast<uint8_t>(city[i]) : 0);
     }
 }
 
 void Team::set_abbr(const std::string& abbr) {
     for(int i=0; i<4; i++) {
-        write_byte_at(65 + i, i < abbr.length() ? static_cast<uint8_t>(abbr[i]) : 0);
+        write_byte_at(65 + i, i < static_cast<int>(abbr.length()) ? static_cast<uint8_t>(abbr[i]) : 0);
     }
 }
 
@@ -524,10 +479,12 @@ static constexpr size_t TENDENCY_BASE_BYTE = 144;
 static constexpr int    TENDENCY_BASE_BIT  = 3;
 
 // Helper to compute the (byte, bit) offset for tendency at index i
+// PROVEN: Each tendency is an 8-bit block. The MSB (bit 7) acts as a
+// category flag; the true 0-127 tendency value is in the lower 7 bits.
 static inline void tendency_offset(int index, size_t& byte_off, int& bit_off) {
     long long total_bits = static_cast<long long>(TENDENCY_BASE_BYTE) * 8
                          + TENDENCY_BASE_BIT
-                         + static_cast<long long>(index) * 7;
+                         + static_cast<long long>(index) * 8;
     byte_off = static_cast<size_t>(total_bits / 8);
     bit_off  = static_cast<int>(total_bits % 8);
 }
@@ -542,14 +499,19 @@ int Player::get_tendency_by_id(int id) const {
     if (id < 0 || id >= 58) return 0;
     size_t bo; int bi;
     tendency_offset(id, bo, bi);
-    return static_cast<int>(read_bits_at(bo, bi, 7));
+    // Read all 8 bits, then mask off the MSB category flag to get 0-127
+    return static_cast<int>(read_bits_at(bo, bi, 8) & 0x7F);
 }
 
 void Player::set_tendency_by_id(int id, int value) {
     if (id < 0 || id >= 58) return;
     size_t bo; int bi;
     tendency_offset(id, bo, bi);
-    write_bits_at(bo, bi, 7, static_cast<uint32_t>(value & 0x7F));
+    // Read existing byte to preserve the MSB category flag (bit 7)
+    uint32_t existing = read_bits_at(bo, bi, 8);
+    uint32_t msb = existing & 0x80;          // preserve category flag
+    uint32_t clamped = static_cast<uint32_t>(value & 0x7F); // clamp 0-127
+    write_bits_at(bo, bi, 8, msb | clamped);
 }
 
 // -- Legacy named tendency accessors (delegate to data-driven) ----------------
@@ -661,47 +623,22 @@ void Player::set_gear_by_id(int id, uint32_t value) {
 // ============================================================================
 // Data-driven Animations (40 items)
 // ============================================================================
-// RED MC 40 Animation sequence is split between offset 193 (Shots/Signatures),
-// 178 (Dunks), and 274 (Layup).
+// PROVEN: Animations are exactly 40 contiguous 1-byte (8-bit) integers
+// starting at byte offset 193 within the player record.
+// Value 255 (0xFF) = "Default" animation.
+// Direct byte access — completely bypasses BitStream for maximum reliability.
 
-static constexpr size_t ANIM_SHOTS_BASE = 193; // 193 + 0..18 = Shots & Iso
-static constexpr size_t ANIM_DUNKS_BASE = 178; // 178 + 0..14 = Dunks
-static constexpr size_t ANIM_INTRO_BASE = 211; // 193 + 18 = 211? No, 193 to 215 = 23 bytes
+static constexpr size_t ANIM_BASE_OFFSET = 193;
 
 int Player::get_animation_by_id(int id) const {
     if (id < 0 || id >= ANIM_COUNT) return 0;
-    
-    // id 0-18: Shots & Momentum & Post & Iso Drives -> Base 193 + id
-    if (id >= 0 && id <= 18) {
-        return static_cast<int>(read_byte_at(ANIM_SHOTS_BASE + id));
-    }
-    // id 19: Layup Package -> 4 bits at byte 274, bit 2
-    if (id == 19) {
-        return static_cast<int>(read_bits_at(274, 2, 4));
-    }
-    // id 20-34: Dunk Packages 1-15 -> Base 178 + (id - 20)
-    if (id >= 20 && id <= 34) {
-        return static_cast<int>(read_byte_at(ANIM_DUNKS_BASE + (id - 20)));
-    }
-    // id 35-39: Pregame Intros -> follow offset 193 + 19 = 212
-    if (id >= 35 && id <= 39) {
-        return static_cast<int>(read_byte_at(ANIM_SHOTS_BASE + 19 + (id - 35)));
-    }
-    return 0;
+    return static_cast<int>(read_byte_at(ANIM_BASE_OFFSET + id));
 }
 
 void Player::set_animation_by_id(int id, int val) {
     if (id < 0 || id >= ANIM_COUNT) return;
-    
-    if (id >= 0 && id <= 18) {
-        write_byte_at(ANIM_SHOTS_BASE + id, static_cast<uint8_t>(val & 0xFF));
-    } else if (id == 19) {
-        write_bits_at(274, 2, 4, static_cast<uint32_t>(val & 0xF));
-    } else if (id >= 20 && id <= 34) {
-        write_byte_at(ANIM_DUNKS_BASE + (id - 20), static_cast<uint8_t>(val & 0xFF));
-    } else if (id >= 35 && id <= 39) {
-        write_byte_at(ANIM_SHOTS_BASE + 19 + (id - 35), static_cast<uint8_t>(val & 0xFF));
-    }
+    // Clamp to uint8_t range (0-255) to prevent memory overflow
+    write_byte_at(ANIM_BASE_OFFSET + id, static_cast<uint8_t>(val & 0xFF));
 }
 
 // ============================================================================
@@ -737,66 +674,74 @@ void RosterEditor::init(size_t buffer_ptr, int buffer_length) {
 //   3. Determine record count and record size by pattern analysis
 
 void RosterEditor::discover_player_table() {
-    static const size_t CANDIDATE_SIZES[] = { 1023, 1024, 911, 1363, 1400 };
-    static const int NUM_CANDIDATES = 5;
-    static const int CANDIDATE_OFFSETS[] = { 28, 409, 398, 675, 842, 380, 46 };
-    static const int NUM_OFFSETS = 7;
+    // =========================================================================
+    // PROVEN ARCHITECTURE: Player record = exactly 1023 bytes.
+    // CFID = 16-bit LE at record_start + 28.
+    // Index 0 is ALWAYS a Dummy Player with CFID == 0 — must be allowed.
+    //
+    // Strategy: "10-Player Validation Depth"
+    //   Scan forward through the buffer. At each candidate offset, demand
+    //   10 consecutive records where the CFID at +28 is a plausible value
+    //   (0-15000). CFID==0 is allowed for the first record (dummy player).
+    //   Only after passing all 10 checks do we declare the table found.
+    // =========================================================================
 
-    size_t best_offset = 0;
-    size_t best_size = DEFAULT_RECORD_SIZE;
-    int best_cf_off = CFID_OFFSET;
-    int max_depth = 0;
+    player_record_size_ = DEFAULT_RECORD_SIZE; // 1023 — hardcoded, proven
+    static const int VALIDATION_DEPTH = 10;
+    static const uint16_t MAX_CFID = 15000;
 
-    // Scan for the longest contiguous chain of valid CFIDs
-    // Exhaustive search over size and CFID offset
-    for (size_t offset = 0; offset < buffer_length_ - 1024 * 10; offset += 4) {
-        for (int s = 0; s < NUM_CANDIDATES; s++) {
-            size_t size = CANDIDATE_SIZES[s];
-            for (int o_idx = 0; o_idx < NUM_OFFSETS; o_idx++) {
-                int cf_off = CANDIDATE_OFFSETS[o_idx];
-                int depth = 0;
+    auto get_cfid_at = [&](size_t abs_off) -> uint16_t {
+        if (abs_off + 1 >= buffer_length_) return 0xFFFF; // sentinel: invalid
+        return static_cast<uint16_t>(buffer_[abs_off])
+             | (static_cast<uint16_t>(buffer_[abs_off + 1]) << 8);
+    };
 
-                // Check first 3
-                size_t c1 = offset + cf_off;
-                size_t c2 = offset + size + cf_off;
-                size_t c3 = offset + (size * 2) + cf_off;
-
-                if (c3 + 1 >= buffer_length_) continue;
-
-                auto get_cfid_at = [&](size_t o) {
-                    return static_cast<uint16_t>(buffer_[o]) | (static_cast<uint16_t>(buffer_[o + 1]) << 8);
-                };
-
-                uint16_t cf1 = get_cfid_at(c1);
-                uint16_t cf2 = get_cfid_at(c2);
-                uint16_t cf3 = get_cfid_at(c3);
-
-                if (cf1 > 0 && cf1 < 15000 && cf2 > 0 && cf2 < 15000 && cf3 > 0 && cf3 < 15000) {
-                    while (true) {
-                        size_t po = offset + (depth * size) + cf_off;
-                        if (po + 1 >= buffer_length_) break;
-                        uint16_t cf = get_cfid_at(po);
-                        if (cf > 0 && cf < 15000) depth++;
-                        else break;
-                    }
-
-                    if (depth > max_depth) {
-                        max_depth = depth;
-                        best_offset = offset;
-                        best_size = size;
-                        best_cf_off = cf_off;
-                    }
-                }
-            }
-        }
-        if (max_depth > 300) break;
+    // Ensure buffer is large enough for at least VALIDATION_DEPTH records
+    size_t min_span = static_cast<size_t>(VALIDATION_DEPTH) * player_record_size_ + CFID_OFFSET + 2;
+    if (buffer_length_ < min_span) {
+        player_table_offset_ = 0;
+        player_count_ = 0;
+        return;
     }
 
-    player_table_offset_ = best_offset;
-    player_count_ = max_depth;
-    player_record_size_ = best_size;
-    // We should ideally store the discovered CFID offset too if we want full flexibility
-    // For now, we will rely on these values being the most likely for the identified size.
+    size_t scan_limit = buffer_length_ - min_span;
+
+    for (size_t offset = 0; offset <= scan_limit; offset += 4) {
+        bool valid = true;
+        for (int i = 0; i < VALIDATION_DEPTH; ++i) {
+            size_t cfid_pos = offset + static_cast<size_t>(i) * player_record_size_ + CFID_OFFSET;
+            uint16_t cf = get_cfid_at(cfid_pos);
+
+            if (i == 0) {
+                // Index 0: allow cfid == 0 (dummy player) but still within range
+                if (cf > MAX_CFID) { valid = false; break; }
+            } else {
+                // Subsequent records: require cfid > 0 and < MAX_CFID
+                if (cf == 0 || cf > MAX_CFID) { valid = false; break; }
+            }
+        }
+
+        if (valid) {
+            // Found 10 valid records. Now count the full extent of the table.
+            // CRITICAL FIX: The NBA 2K14 database has exactly 1664 player slots.
+            // Many slots are "Null Slots" (CAP templates, empty roster spots) with
+            // CFID == 0 or 65535. We MUST NOT break on these — just keep counting
+            // until we hit the buffer boundary or the max array size.
+            player_table_offset_ = offset;
+            int count = 0;
+            while (count < MAX_PLAYERS) {
+                size_t record_end = offset + static_cast<size_t>(count + 1) * player_record_size_;
+                if (record_end > buffer_length_) break; // prevent buffer overrun
+                count++;
+            }
+            player_count_ = count;
+            return;
+        }
+    }
+
+    // Fallback: no valid table found
+    player_table_offset_ = 0;
+    player_count_ = 0;
 }
 
 // -- Team Table Discovery -----------------------------------------------------
